@@ -428,19 +428,20 @@ class ForeverClubApp {
     };
 
     // Swipe-up gesture on the ticket
+    const ticketMask = ticketEl.parentElement;
     let touchStartY = null;
-    ticketEl.addEventListener('pointerdown', (e) => {
+    ticketMask.addEventListener('pointerdown', (e) => {
       if (!readyToCollect || !e.isPrimary) return;
       touchStartY = e.clientY;
-      ticketEl.setPointerCapture(e.pointerId);
+      ticketMask.setPointerCapture(e.pointerId);
     });
-    ticketEl.addEventListener('pointerup', (e) => {
+    ticketMask.addEventListener('pointerup', (e) => {
       if (touchStartY === null || !e.isPrimary) return;
       const travel = touchStartY - e.clientY;
       touchStartY = null;
       if (travel > 28 || Math.abs(travel) < 10) collectTicket();
     });
-    ticketEl.addEventListener('pointercancel', () => { touchStartY = null; });
+    ticketMask.addEventListener('pointercancel', () => { touchStartY = null; });
     ticketEl.addEventListener('keydown', (e) => {
       if ((e.key === 'Enter' || e.key === ' ') && readyToCollect) {
         e.preventDefault();
