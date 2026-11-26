@@ -544,7 +544,7 @@ class ForeverClubApp {
   /* ---------------- SCENE 02: IDENTITY SELECTION ---------------- */
   renderIdentitySelection() {
     this.clearScene();
-    this.setChromeVisible(false);
+    this.setChromeVisible(this.state.memberIndex >= 0);
 
     const membersHtml = this.config.members.map((m, idx) => `
       <button type="button" class="identity-star-card" data-member="${idx}">
@@ -556,8 +556,8 @@ class ForeverClubApp {
 
     $('app').innerHTML = `
       <section class="scene-shell scene-identity">
-        <span class="eyebrow">Scene 02 · Celestial Identity</span>
-        <h1>Who is arriving tonight?</h1>
+        <span class="eyebrow">Royal Membership</span>
+        <h1>Choose Your Star</h1>
         <p class="subtitle">Select your star to personalize your membership card and cosmic pass.</p>
         <div class="identity-grid">${membersHtml}</div>
         <div id="identity-welcome" class="identity-welcome hidden">
@@ -646,6 +646,8 @@ class ForeverClubApp {
     };
     card.addEventListener('pointermove', onMove);
     card.addEventListener('pointerleave', onLeave);
+    card.addEventListener('pointercancel', onLeave);
+    card.addEventListener('pointerup', onLeave);
 
     $('download-member-card').addEventListener('click', () => {
       this.audio.playChime(880, 0.28);

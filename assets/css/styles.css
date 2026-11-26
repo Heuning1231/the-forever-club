@@ -26,7 +26,7 @@ html, body {
   color: var(--pearl);
   font-family: var(--font-sans);
   line-height: 1.6;
-  overflow-x: hidden;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -1485,7 +1485,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [tabindex]:focus-v
   border: 1px solid #ae8c5d80;
 }
 .btn-gold-outline:hover, .tab-pill.is-active { background: var(--lilac); color: var(--ink); }
-.btn-link { min-height: 44px; }
+.btn-link { min-height: 44px; background: #fff8; border-color: #ae8c5d80; }
 .scene-shell { animation: scene-arrival .52s var(--ease-luxury) both; }
 @keyframes scene-arrival {
   from { opacity: 0; translate: 0 9px; }
@@ -1604,6 +1604,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .membership-card-3d {
   aspect-ratio: auto;
   min-height: clamp(220px, 55vw, 277px);
+  touch-action: pan-y;
   background: conic-gradient(from 135deg at 30% 25%, #cab0de, #f8dfdc, #fff3dc, #dfc7ec, #cab0de);
   box-shadow: var(--layer-shadow);
 }
@@ -1622,7 +1623,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [tabindex]:focus-v
 }
 .polaroid-frame { box-shadow: 0 8px 15px #51366355; }
 .telemetry-pill { color: var(--ink); background: #fff8; border-color: #a4845666; }
-.telemetry-pill strong { color: var(--gold-ink); }
+.telemetry-pill strong { color: var(--gold-ink); white-space: nowrap; }
 .map-orbit-ring { border-color: #a17b4c66; }
 .map-core-crest {
   color: var(--gold-ink);
@@ -1643,7 +1644,17 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [tabindex]:focus-v
   border-radius: 0;
   background: linear-gradient(90deg, #fff6, transparent);
 }
-.portal-card::after { content: "↗"; position: absolute; right: 10px; top: 23px; color: var(--gold-ink); }
+.portal-card::after {
+  content: "";
+  position: absolute;
+  right: 13px;
+  top: 28px;
+  width: 8px;
+  height: 8px;
+  border-top: 1px solid var(--gold-ink);
+  border-right: 1px solid var(--gold-ink);
+  transform: rotate(45deg);
+}
 .portal-card.is-unlocked { box-shadow: inset 3px 0 var(--champagne); }
 .portal-card p { margin: 3px 0; }
 
@@ -1729,7 +1740,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [tabindex]:focus-v
   .identity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .identity-star-card { min-width: 0; padding-inline: 9px; overflow-wrap: anywhere; }
   .universe-telemetry { gap: 4px; flex-wrap: nowrap; }
-  .telemetry-pill { flex: 1; min-width: 0; padding-inline: 6px; }
+  .telemetry-pill { flex: 1; min-width: 0; padding-inline: 6px; flex-direction: column; gap: 2px; border-radius: 13px; }
   .planets-map {
     height: auto;
     display: grid;
