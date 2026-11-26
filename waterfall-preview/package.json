@@ -1,0 +1,14 @@
+{
+  "name": "forever-club-waterfall-preview",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild scene.js --bundle --minify --target=es2022 --legal-comments=linked --outfile=waterfall.bundle.js"
+  },
+  "dependencies": {
+    "three": "0.183.2"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  }
+}
