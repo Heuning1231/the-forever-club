@@ -7,6 +7,7 @@
   <title>The Forever Club — 2022–2026</title>
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
   <link rel="stylesheet" href="./assets/css/styles.css">
+  <link rel="stylesheet" href="./assets/css/universe.css">
 </head>
 <body>
   <canvas id="bg-stars" aria-hidden="true"></canvas>
@@ -27,17 +28,18 @@
     </details>
   </header>
 
-  <main id="app" aria-live="polite"></main>
+  <main id="app"></main>
 
-  <div id="media-modal" class="media-modal hidden" role="dialog" aria-modal="true" aria-label="Memory viewer">
+  <dialog id="media-modal" class="media-modal hidden" aria-label="Memory viewer">
     <button type="button" class="modal-close-btn" id="modal-close" aria-label="Close viewer">Close</button>
     <div class="modal-stage" id="modal-stage"></div>
-  </div>
+  </dialog>
 
   <aside id="egg-toast" class="egg-toast hidden" role="status" aria-live="polite">
     <span class="eyebrow" id="egg-count">Celestial Secret</span>
     <h3 id="egg-title"></h3>
     <p id="egg-body" class="muted"></p>
+    <button type="button" class="btn-gold-outline hidden" id="egg-download">Save Certificate PNG</button>
     <button type="button" class="btn-gold-outline" id="egg-close">Acknowledge</button>
   </aside>
 

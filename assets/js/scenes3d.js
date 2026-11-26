@@ -4,7 +4,7 @@
    3) The Memory Crystal (Interactive 3D Faceted Amethyst Polyhedron)
    4) Final Constellation (Interactive 4-Star Connection Canvas)
 */
-import { resolveThumbSrc } from './placeholders.js';
+import { resolveThumbSrc, resolvePosterSrc } from './placeholders.js';
 
 export function isReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
@@ -95,7 +95,7 @@ export class CelestialStarfield {
 }
 
 /* ---------------- 2. SCENE 04 MEMORY ORBIT (3D Z-INTERLEAVED POLAROIDS + SPLINES) ---------------- */
-export function mountMemoryOrbit(container, photos, { onSelectPhoto, onHiddenOrbitEgg }) {
+export function mountMemoryOrbit(container, items, { onSelectPhoto, onHiddenOrbitEgg, onSwipe }) {
   container.replaceChildren();
 
   const stage = document.createElement('div');
@@ -113,23 +113,18 @@ export function mountMemoryOrbit(container, photos, { onSelectPhoto, onHiddenOrb
   const hiddenStarBtn = document.createElement('button');
   hiddenStarBtn.type = 'button';
   hiddenStarBtn.className = 'orbit-hidden-node';
-  hiddenStarBtn.setAttribute('aria-label', 'Hidden golden orbital resonance node');
-  hiddenStarBtn.title = 'Celestial resonance node';
+  hiddenStarBtn.setAttribute('aria-label', 'Golden shooting star');
   hiddenStarBtn.innerHTML = '<span class="orbit-node-dot"></span>';
   hiddenStarBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     if (onHiddenOrbitEgg) onHiddenOrbitEgg();
   });
 
-  stage.append(backCanvas, cardsLayer, frontCanvas, hiddenStarBtn);
-  container.appendChild(stage);
+  stage.append(backCanvas, cardsLayer, frontCanvas);
+  container.append(stage, hiddenStarBtn);
 
-  // Pick 9 curated archive plates placed across true Z depths (foreground, midground, background)
-  const sampleIndices = [0, 3, 7, 10, 18, 20, 24, 32, 34];
-  const nodes = sampleIndices.map((pIdx, i) => {
-    const item = photos[pIdx] || photos[i % photos.length];
-    // Spread across elliptical 3D cosmos
-    const angle = (i / sampleIndices.length) * Math.PI * 2 + 0.3;
+  const nodes = items.map((item, i) => {
+    const angle = (i / items.length) * Math.PI * 2 + 0.3;
     const rx = 0.36;
     const ry = 0.32;
     const zDepth = (i % 3 === 0) ? 140 : (i % 3 === 1 ? 0 : -130); // Foreground / Mid / Background
@@ -148,12 +143,25 @@ export function mountMemoryOrbit(container, photos, { onSelectPhoto, onHiddenOrb
     btn.type = 'button';
     btn.className = 'orbit-polaroid';
     btn.style.zIndex = String(n.z > 0 ? 30 + idx : (n.z < 0 ? 10 + idx : 20 + idx));
-    btn.innerHTML = `
-      <span class="polaroid-frame">
-        <img loading="lazy" src="${resolveThumbSrc(n.item)}" alt="${n.item.label}">
-        <span class="polaroid-caption">${n.item.label}</span>
-      </span>
-    `;
+    const isVideo = n.item.type === 'video';
+    const frame = document.createElement('span');
+    frame.className = 'polaroid-frame';
+    const img = document.createElement('img');
+    img.loading = 'lazy';
+    img.alt = '';
+    img.src = isVideo ? resolvePosterSrc(n.item) : resolveThumbSrc(n.item);
+    const caption = document.createElement('span');
+    caption.className = 'polaroid-caption';
+    caption.textContent = n.item.label;
+    frame.append(img, caption);
+    if (isVideo) {
+      const play = document.createElement('span');
+      play.className = 'memory-play-glyph';
+      play.setAttribute('aria-hidden', 'true');
+      frame.append(play);
+    }
+    btn.setAttribute('aria-label', `${isVideo ? 'Play' : 'View'} ${n.item.label}`);
+    btn.append(frame);
     btn.addEventListener('click', () => onSelectPhoto(n.item));
     cardsLayer.appendChild(btn);
     return btn;
@@ -166,15 +174,18 @@ export function mountMemoryOrbit(container, photos, { onSelectPhoto, onHiddenOrb
   let dragging = false;
   let startX = 0;
   let startY = 0;
+  let originX = 0;
+  let originY = 0;
   let moved = false;
   let rafId = 0;
   let destroyed = false;
 
   function onPointerDown(e) {
+    if (!e.isPrimary || e.button !== 0) return;
     dragging = true;
     moved = false;
-    startX = e.clientX;
-    startY = e.clientY;
+    originX = startX = e.clientX;
+    originY = startY = e.clientY;
   }
 
   function onPointerMove(e) {
@@ -187,6 +198,7 @@ export function mountMemoryOrbit(container, photos, { onSelectPhoto, onHiddenOrb
       targetPitch = Math.max(-0.7, Math.min(0.7, targetPitch + dy * 0.004));
       startX = e.clientX;
       startY = e.clientY;
+      if (isReducedMotion()) frame(performance.now());
     } else if (e.pointerType === 'mouse') {
       const rx = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
       const ry = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
@@ -195,8 +207,13 @@ export function mountMemoryOrbit(container, photos, { onSelectPhoto, onHiddenOrb
     }
   }
 
-  function onPointerUp() {
+  function onPointerUp(e) {
+    if (!dragging || !e.isPrimary) return;
     dragging = false;
+    if (e.type === 'pointercancel') return;
+    const dx = e.clientX - originX;
+    const dy = e.clientY - originY;
+    if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy)) onSwipe?.(dx < 0 ? 1 : -1);
   }
 
   stage.addEventListener('pointerdown', onPointerDown);
@@ -226,7 +243,7 @@ export function mountMemoryOrbit(container, photos, { onSelectPhoto, onHiddenOrb
     ];
 
     ribbons.forEach((rib, rIdx) => {
-      const steps = 84;
+      const steps = isLowPowerDevice() ? 42 : 64;
       for (let i = 0; i < steps; i++) {
         const a0 = (i / steps) * Math.PI * 2;
         const a1 = ((i + 1) / steps) * Math.PI * 2;
@@ -249,9 +266,9 @@ export function mountMemoryOrbit(container, photos, { onSelectPhoto, onHiddenOrb
         const y1 = cy + lx1 * sinT + ly1 * cosT;
 
         ctx.strokeStyle = frontPass
-          ? `rgba(220, 196, 154, ${0.42 + 0.28 * Math.sin(mid)})`
-          : `rgba(203, 181, 217, ${0.18 + 0.12 * Math.abs(Math.sin(mid))})`;
-        ctx.lineWidth = frontPass ? 2.1 : 1.15;
+          ? `rgba(180, 133, 68, ${0.52 + 0.27 * Math.sin(mid)})`
+          : `rgba(193, 153, 99, ${0.32 + 0.12 * Math.abs(Math.sin(mid))})`;
+        ctx.lineWidth = frontPass ? 2.8 : 1.4;
         ctx.beginPath();
         ctx.moveTo(x0, y0);
         ctx.lineTo(x1, y1);
@@ -296,14 +313,17 @@ export function mountMemoryOrbit(container, photos, { onSelectPhoto, onHiddenOrb
   }
 
   let rect = resize();
-  const onResize = () => { rect = resize(); };
+  const onResize = () => {
+    rect = resize();
+    if (isReducedMotion()) frame(performance.now());
+  };
   window.addEventListener('resize', onResize, { passive: true });
 
   function frame(ts) {
     if (destroyed) return;
     const reduced = isReducedMotion();
-    yaw += (targetYaw - yaw) * 0.08;
-    pitch += (targetPitch - pitch) * 0.08;
+    yaw += (targetYaw - yaw) * (reduced ? 1 : 0.08);
+    pitch += (targetPitch - pitch) * (reduced ? 1 : 0.08);
     const sec = reduced ? 0 : ts * 0.001;
 
     // Position Polaroids with 3D perspective & depth scale
@@ -322,7 +342,7 @@ export function mountMemoryOrbit(container, photos, { onSelectPhoto, onHiddenOrb
     drawSplines(backCanvas.getContext('2d'), rect.width, rect.height, sec, false);
     drawSplines(frontCanvas.getContext('2d'), rect.width, rect.height, sec, true);
 
-    if (!reduced && !document.hidden) {
+    if (!reduced) {
       rafId = requestAnimationFrame(frame);
     }
   }
@@ -403,7 +423,10 @@ export function mountMemoryCrystal(container, { onReleaseMemory }) {
   }
 
   let size = resize();
-  const onResize = () => { size = resize(); };
+  const onResize = () => {
+    size = resize();
+    if (isReducedMotion()) render(performance.now());
+  };
   window.addEventListener('resize', onResize, { passive: true });
 
   canvas.addEventListener('pointerdown', (e) => {
@@ -424,6 +447,7 @@ export function mountMemoryCrystal(container, { onReleaseMemory }) {
     velY = dx * 0.0025;
     sx = e.clientX;
     sy = e.clientY;
+    if (isReducedMotion()) render(performance.now());
   });
 
   canvas.addEventListener('pointercancel', () => { dragging = false; });
@@ -544,7 +568,7 @@ export function mountMemoryCrystal(container, { onReleaseMemory }) {
     ctx.stroke();
     ctx.restore();
 
-    if (!reduced && !document.hidden) {
+    if (!reduced) {
       rafId = requestAnimationFrame(render);
     }
   }
@@ -683,7 +707,7 @@ export function mountConstellationCanvas(container, members, { onStarLit, onAllL
 
     ctx.restore();
 
-    if (!isReducedMotion() && !document.hidden) {
+    if (!reduced) {
       rafId = requestAnimationFrame(render);
     }
   }
