@@ -8,7 +8,7 @@ import { resolveThumbSrc } from './placeholders.js';
 
 export function isReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-    localStorage.getItem('fc-reduced-motion') === '1';
+    document.documentElement.classList.contains('reduced-motion');
 }
 
 export function isLowPowerDevice() {
@@ -64,8 +64,8 @@ export class CelestialStarfield {
     for (const s of this.stars) {
       const alpha = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(sec * s.speed + s.phase));
       ctx.fillStyle = s.gold
-        ? `rgba(220, 196, 154, ${alpha})`
-        : `rgba(245, 239, 230, ${alpha * 0.85})`;
+        ? `rgba(174, 132, 76, ${alpha})`
+        : `rgba(255, 255, 255, ${alpha})`;
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fill();
@@ -202,6 +202,7 @@ export function mountMemoryOrbit(container, photos, { onSelectPhoto, onHiddenOrb
   stage.addEventListener('pointerdown', onPointerDown);
   window.addEventListener('pointermove', onPointerMove, { passive: true });
   window.addEventListener('pointerup', onPointerUp, { passive: true });
+  window.addEventListener('pointercancel', onPointerUp, { passive: true });
 
   // Prevent accidental click after drag
   cardsLayer.addEventListener('click', (e) => {
@@ -334,6 +335,7 @@ export function mountMemoryOrbit(container, photos, { onSelectPhoto, onHiddenOrb
       if (rafId) cancelAnimationFrame(rafId);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
       window.removeEventListener('resize', onResize);
     }
   };
@@ -424,6 +426,7 @@ export function mountMemoryCrystal(container, { onReleaseMemory }) {
     sy = e.clientY;
   });
 
+  canvas.addEventListener('pointercancel', () => { dragging = false; });
   canvas.addEventListener('pointerup', () => {
     dragging = false;
     if (!moved && onReleaseMemory) onReleaseMemory();
@@ -579,6 +582,7 @@ export function mountConstellationCanvas(container, members, { onStarLit, onAllL
   let targetZoom = 1.0;
   let rafId = 0;
   let destroyed = false;
+  const reduced = isReducedMotion();
 
   const starBtns = members.map((m, idx) => {
     const btn = document.createElement('button');
@@ -596,6 +600,7 @@ export function mountConstellationCanvas(container, members, { onStarLit, onAllL
         targetZoom = 0.88; // Slow cinematic camera pull-back
         if (onAllLit) onAllLit();
       }
+      if (reduced) render(performance.now());
     });
     buttonsLayer.appendChild(btn);
     return btn;
@@ -611,13 +616,17 @@ export function mountConstellationCanvas(container, members, { onStarLit, onAllL
   }
 
   let rect = resize();
-  const onResize = () => { rect = resize(); };
+  const onResize = () => {
+    rect = resize();
+    if (reduced) render(performance.now());
+  };
   window.addEventListener('resize', onResize, { passive: true });
 
   function render(ts) {
     if (destroyed) return;
     const sec = ts * 0.001;
-    cameraZoom += (targetZoom - cameraZoom) * 0.03;
+    if (!reduced) cameraZoom += (targetZoom - cameraZoom) * 0.03;
+    buttonsLayer.style.transform = `scale(${cameraZoom})`;
 
     const w = rect.width;
     const h = rect.height;
@@ -687,7 +696,7 @@ export function mountConstellationCanvas(container, members, { onStarLit, onAllL
       cameraZoom = 1.0;
       targetZoom = 1.0;
       starBtns.forEach((b) => b.classList.remove('is-lit'));
-      render(performance.now());
+      if (reduced) render(performance.now());
     },
     destroy() {
       destroyed = true;

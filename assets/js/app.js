@@ -94,6 +94,8 @@ class ForeverClubApp {
 
     this.loadState();
     this.bindChrome();
+    this.starfield.pause();
+    this.starfield.start();
     this.syncControls();
 
     // Start at Scene 00 Ticket Printer unless already admitted in this session
@@ -124,6 +126,18 @@ class ForeverClubApp {
   }
 
   bindChrome() {
+    const menu = $('club-menu');
+    document.addEventListener('click', (event) => {
+      if (!menu.contains(event.target)) menu.open = false;
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      if (!$('media-modal').classList.contains('hidden')) this.closeModal();
+      else if (menu.open) {
+        menu.open = false;
+        menu.querySelector('summary').focus();
+      } else if ($('cine-exit')) this.renderUniverse();
+    });
     $('btn-home').addEventListener('click', () => {
       this.audio.playChime(587, 0.25);
       this.renderUniverse();
@@ -133,6 +147,7 @@ class ForeverClubApp {
       this.syncControls();
     });
     $('btn-motion').addEventListener('click', () => {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       this.state.reducedMotionPref = !this.state.reducedMotionPref;
       try {
         localStorage.setItem('fc-reduced-motion', this.state.reducedMotionPref ? '1' : '0');
@@ -166,14 +181,16 @@ class ForeverClubApp {
     soundBtn.setAttribute('aria-pressed', String(!this.audio.muted));
 
     const motionBtn = $('btn-motion');
-    motionBtn.textContent = this.state.reducedMotionPref ? 'Motion: Reduced' : 'Motion: Full';
-    motionBtn.setAttribute('aria-pressed', String(this.state.reducedMotionPref));
+    motionBtn.textContent = isReducedMotion() ? 'Motion: Reduced' : 'Motion: Full';
+    motionBtn.setAttribute('aria-pressed', String(isReducedMotion()));
+    motionBtn.disabled = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const member = this.config.members[this.state.memberIndex];
     $('nav-member-badge').textContent = member ? `${member.name} · ${member.cardCode}` : 'Private Collection';
   }
 
   clearScene() {
+    $('club-menu').open = false;
     this.activeCleanup.forEach((fn) => {
       try { fn(); } catch (_) {}
     });
@@ -296,8 +313,12 @@ class ForeverClubApp {
       <section class="scene-shell scene-printer">
         <div class="printer-ambient-ring"></div>
         <div class="printer-header">
-          <span class="eyebrow">Scene 00 · Royal Admission</span>
-          <button type="button" class="btn-link skip-intro-btn" id="skip-intro">Skip Intro</button>
+          <div class="admission-edition"><span>The Forever Club · 2022–2026</span><button type="button" class="btn-link skip-intro-btn" id="skip-intro">Skip Intro</button></div>
+          <div class="admission-intro">
+            <span class="eyebrow">A graduation invitation</span>
+            <h1>Our little <em>universe.</em></h1>
+            <p class="subtitle">Four girls, one universe, infinite memories.</p>
+          </div>
         </div>
 
         <div class="royal-printer-stage" id="printer-stage">
@@ -323,8 +344,7 @@ class ForeverClubApp {
                     </div>
                     <div class="ticket-center">
                       <span class="ticket-kicker">ROYAL ADMISSION</span>
-                      <h2>WELCOME TO</h2>
-                      <h1>The Forever Club</h1>
+                      <h2>The Forever Club</h2>
                       <p>Four Girls. One Universe. Infinite Memories.</p>
                     </div>
                     <div class="ticket-perf-line"></div>
@@ -400,24 +420,27 @@ class ForeverClubApp {
       readyToCollect = true;
       this.audio.playTicketCollect();
       stageEl.classList.add('is-collecting');
-      setTimeout(() => {
+      timers.push(setTimeout(() => {
         this.state.admitted = true;
         this.saveState();
         this.renderRoyalInvitation();
-      }, reduced ? 120 : 1050);
+      }, reduced ? 50 : 720));
     };
 
     // Swipe-up gesture on the ticket
-    let touchStartY = 0;
+    let touchStartY = null;
     ticketEl.addEventListener('pointerdown', (e) => {
+      if (!readyToCollect || !e.isPrimary) return;
       touchStartY = e.clientY;
+      ticketEl.setPointerCapture(e.pointerId);
     });
     ticketEl.addEventListener('pointerup', (e) => {
-      if (!readyToCollect) return;
-      if (touchStartY - e.clientY > 28 || Math.abs(touchStartY - e.clientY) < 10) {
-        collectTicket();
-      }
+      if (touchStartY === null || !e.isPrimary) return;
+      const travel = touchStartY - e.clientY;
+      touchStartY = null;
+      if (travel > 28 || Math.abs(travel) < 10) collectTicket();
     });
+    ticketEl.addEventListener('pointercancel', () => { touchStartY = null; });
     ticketEl.addEventListener('keydown', (e) => {
       if ((e.key === 'Enter' || e.key === ' ') && readyToCollect) {
         e.preventDefault();
@@ -441,7 +464,7 @@ class ForeverClubApp {
 
     $('app').innerHTML = `
       <section class="scene-shell scene-invitation">
-        <span class="eyebrow">Scene 01 · Private Invitation · Est. Forever</span>
+        <span class="eyebrow">Royal Invitation</span>
         <h1 class="display-title">The Forever <em>Club</em></h1>
         <p class="subtitle">Four Girls. One Universe. Infinite Memories.</p>
 
@@ -476,6 +499,7 @@ class ForeverClubApp {
     const proceedBtn = $('enter-identity-btn');
     let opened = false;
     let pressTimer = 0;
+    let revealTimer;
 
     sealBtn.addEventListener('pointerdown', () => {
       pressTimer = setTimeout(() => {
@@ -489,6 +513,7 @@ class ForeverClubApp {
     const clearPress = () => { if (pressTimer) clearTimeout(pressTimer); };
     sealBtn.addEventListener('pointerup', clearPress);
     sealBtn.addEventListener('pointerleave', clearPress);
+    sealBtn.addEventListener('pointercancel', clearPress);
 
     sealBtn.addEventListener('click', () => {
       if (opened) return;
@@ -496,7 +521,7 @@ class ForeverClubApp {
       this.audio.playPaperUnfold();
       env.classList.add('is-open');
       $('seal-hint').textContent = 'Invitation unsealed.';
-      setTimeout(() => {
+      revealTimer = setTimeout(() => {
         proceedBtn.classList.remove('hidden');
       }, isReducedMotion() ? 50 : 750);
     });
@@ -510,7 +535,10 @@ class ForeverClubApp {
       }
     });
 
-    this.activeCleanup.push(clearPress);
+    this.activeCleanup.push(() => {
+      clearPress();
+      clearTimeout(revealTimer);
+    });
   }
 
   /* ---------------- SCENE 02: IDENTITY SELECTION ---------------- */
@@ -570,7 +598,7 @@ class ForeverClubApp {
 
     $('app').innerHTML = `
       <section class="scene-shell scene-card">
-        <span class="eyebrow">Scene 03 · Royal Membership Card</span>
+        <span class="eyebrow">Royal Membership Pass</span>
         <h1>${member.name}</h1>
         <p class="subtitle">Move your finger or cursor across the card to tilt the pearlescent champagne foil.</p>
 
@@ -640,7 +668,7 @@ class ForeverClubApp {
     const viewedCount = this.state.viewedMediaIds.length;
     const allWorldsDone = visitedCount >= 6;
 
-    const planetsHtml = this.config.worlds.map((w, idx) => {
+    const planetsHtml = this.config.worlds.map((w) => {
       const done = this.state.visitedWorlds.includes(w.id);
       return `
         <button type="button" class="planet-btn ${done ? 'is-visited' : ''}" data-world="${w.id}" style="left:${w.pos.x}%;top:${w.pos.y}%;--planet-accent:${w.accent}">
@@ -648,7 +676,7 @@ class ForeverClubApp {
             <span class="planet-halo"></span>
             ${WORLD_ICONS[w.id]}
           </span>
-          <span class="planet-numeral">World ${w.numeral}</span>
+          <span class="planet-numeral">${done ? 'Explored' : `World ${w.numeral}`}</span>
           <span class="planet-title">${w.title}</span>
         </button>
       `;
@@ -657,9 +685,13 @@ class ForeverClubApp {
     $('app').innerHTML = `
       <section class="scene-shell scene-universe">
         <div class="universe-hero-head">
-          <span class="eyebrow">Scene 04 · Celestial Memory Orbit</span>
+          <span class="eyebrow">The Forever Club · 2022–2026</span>
           <h1>Our Little Universe</h1>
-          <p class="subtitle">Drag the cosmic field to shift perspective around our suspended Polaroids, or enter one of the six celestial worlds below.</p>
+          <p class="subtitle">Follow the memories we made and the stories we’ll take with us.</p>
+          <div class="universe-jumps">
+            <a href="#worlds">Explore six worlds</a>
+            <a href="#keepsakes">More experiences</a>
+          </div>
         </div>
 
         <div class="orbit-container" id="orbit-container" aria-label="3D Memory Orbit with floating Polaroids and champagne gold trails"></div>
@@ -679,7 +711,7 @@ class ForeverClubApp {
           </button>
         </div>
 
-        <div class="worlds-map-section">
+        <div class="worlds-map-section" id="worlds">
           <div class="section-heading">
             <span class="eyebrow">The Six Celestial Worlds</span>
             <h2>Choose Your Orbit</h2>
@@ -695,6 +727,9 @@ class ForeverClubApp {
           </div>
         </div>
 
+        <div class="section-heading" id="keepsakes">
+          <h2>Beyond the Six Worlds</h2>
+        </div>
         <div class="sanctuary-portals">
           <button type="button" class="portal-card" id="open-crystal-btn">
             <span class="eyebrow">Celestial Artifact</span>
@@ -1041,28 +1076,43 @@ class ForeverClubApp {
       this.openPhotoModal(photo, `${story.headline} — ${story.dek}`);
     });
 
+    let turnTimer;
     const turnPage = (dir) => {
+      if (turnTimer) return;
       this.audio.playPaperUnfold();
       const pageEl = $('mag-page');
       pageEl.classList.add(dir > 0 ? 'turning-next' : 'turning-prev');
-      setTimeout(() => {
+      turnTimer = setTimeout(() => {
         this.magazineIndex = (this.magazineIndex + dir + stories.length) % stories.length;
         this.renderChaosArchives();
-      }, isReducedMotion() ? 20 : 240);
+      }, isReducedMotion() ? 20 : 360);
     };
 
     $('mag-prev').addEventListener('click', () => turnPage(-1));
     $('mag-next').addEventListener('click', () => turnPage(1));
 
-    // Horizontal swipe support
-    let sx = 0;
     const stage = $('mag-stage');
-    stage.addEventListener('pointerdown', (e) => { sx = e.clientX; });
-    stage.addEventListener('pointerup', (e) => {
-      const dx = e.clientX - sx;
-      if (dx < -45) turnPage(1);
-      else if (dx > 45) turnPage(-1);
+    let swipeStart;
+    let swiped = false;
+    stage.addEventListener('pointerdown', (event) => {
+      swipeStart = { x: event.clientX, y: event.clientY };
+      swiped = false;
     });
+    stage.addEventListener('pointercancel', () => { swipeStart = null; });
+    stage.addEventListener('pointerup', (event) => {
+      if (!swipeStart) return;
+      const dx = event.clientX - swipeStart.x;
+      const dy = event.clientY - swipeStart.y;
+      swipeStart = null;
+      if (Math.abs(dx) <= 45 || Math.abs(dx) <= Math.abs(dy)) return;
+      swiped = true;
+      turnPage(dx < 0 ? 1 : -1);
+    });
+    stage.addEventListener('click', (event) => {
+      if (swiped && event.detail > 0) event.stopImmediatePropagation();
+      swiped = false;
+    }, true);
+    this.activeCleanup.push(() => clearTimeout(turnTimer));
   }
 
   /* ---------------- WORLD III: MEMORY CINEMA ---------------- */
@@ -1089,7 +1139,7 @@ class ForeverClubApp {
         <h1>Memory Cinema</h1>
         <p class="subtitle">${this.config.worlds[2].subtitle}</p>
 
-        <div class="cinema-proscenium ${activeVid ? 'curtains-open' : ''}" id="cinema-proscenium">
+        <div class="cinema-proscenium ${activeVid ? 'curtains-open' : 'curtains-idle'}" id="cinema-proscenium">
           <div class="velvet-curtain curtain-left"></div>
           <div class="velvet-curtain curtain-right"></div>
           <div class="cinema-screen-frame">
@@ -1179,6 +1229,12 @@ class ForeverClubApp {
 
     let spinning = false;
     let currentDeg = 0;
+    let spinTimer;
+    let tickInt;
+    this.activeCleanup.push(() => {
+      clearInterval(tickInt);
+      clearTimeout(spinTimer);
+    });
 
     $('spin-wheel-btn').addEventListener('click', () => {
       if (spinning) return;
@@ -1201,13 +1257,13 @@ class ForeverClubApp {
       wheel.style.transform = `rotate(${currentDeg}deg)`;
 
       let tickCount = 0;
-      const tickInt = setInterval(() => {
+      tickInt = setInterval(() => {
         tickCount++;
         this.audio.playWheelTick();
         if (tickCount >= 9) clearInterval(tickInt);
       }, 180);
 
-      setTimeout(() => {
+      spinTimer = setTimeout(() => {
         clearInterval(tickInt);
         this.state.drawnBlessings.push(picked);
         this.state.blessingHistory.push(picked);
@@ -1288,7 +1344,7 @@ class ForeverClubApp {
                 </div>
                 ${!q.confirmed ? `<p class="muted quiz-verify-note">${q.verificationNote}</p>` : ''}
               </div>
-              <div class="oracle-face oracle-back">
+              <div class="oracle-face oracle-back" inert>
                 <span class="eyebrow" id="oracle-verdict">Revealed</span>
                 <h3 id="oracle-answer"></h3>
                 <img src="${resolvePhotoSrc(photo)}" alt="${photo.label}" class="quiz-reveal-img">
@@ -1318,6 +1374,9 @@ class ForeverClubApp {
         $('oracle-verdict').textContent = correct ? 'Aligned · Correct' : 'Archive Answer';
         $('oracle-answer').textContent = q.options[q.correctIndex];
         $('oracle-card').classList.add('is-flipped');
+        document.querySelector('.oracle-front').inert = true;
+        document.querySelector('.oracle-back').inert = false;
+        $('quiz-next-btn').focus({ preventScroll: true });
       });
     });
 
@@ -1556,7 +1615,7 @@ class ForeverClubApp {
     this.setChromeVisible(false);
     const items = this.media.photos;
     let idx = 0;
-    let paused = false;
+    let paused = isReducedMotion();
 
     $('app').innerHTML = `
       <section class="cinematic-overlay">
@@ -1570,7 +1629,7 @@ class ForeverClubApp {
         </div>
         <div class="cinematic-bar">
           <button type="button" class="btn-gold-outline" id="cine-prev">← Previous</button>
-          <button type="button" class="btn-gold-outline" id="cine-toggle">Pause</button>
+          <button type="button" class="btn-gold-outline" id="cine-toggle">${paused ? 'Resume' : 'Pause'}</button>
           <button type="button" class="btn-gold-outline" id="cine-next">Next →</button>
           <button type="button" class="btn-gold-primary" id="cine-exit">Exit Cinema</button>
         </div>
@@ -1610,7 +1669,10 @@ class ForeverClubApp {
 
     $('app').innerHTML = `
       <section class="scene-shell scene-constellation">
-        <span class="eyebrow">Grand Finale · All Six Worlds Explored</span>
+        <div class="world-topbar">
+          <button type="button" class="btn-link back-orbit-btn">← Return to Universe</button>
+          <span class="eyebrow">Graduation Finale</span>
+        </div>
         <h1>Our Forever Constellation</h1>
         <p class="subtitle" id="constellation-prompt">Tap each of the four stars to weave our constellation.</p>
 
@@ -1629,6 +1691,8 @@ class ForeverClubApp {
       </section>
     `;
 
+    document.querySelector('.back-orbit-btn').addEventListener('click', () => this.renderUniverse());
+    let epilogueTimer;
     const ctrl = mountConstellationCanvas($('constellation-mount'), this.config.members, {
       onStarLit: (idx, count) => {
         this.audio.playConstellationStar(idx);
@@ -1638,12 +1702,15 @@ class ForeverClubApp {
       },
       onAllLit: () => {
         this.audio.playFinaleChord();
-        setTimeout(() => {
+        epilogueTimer = setTimeout(() => {
           $('constellation-epilogue').classList.remove('hidden');
-        }, 450);
+        }, isReducedMotion() ? 0 : 450);
       }
     });
-    this.activeCleanup.push(() => ctrl.destroy());
+    this.activeCleanup.push(() => {
+      clearTimeout(epilogueTimer);
+      ctrl.destroy();
+    });
 
     $('save-constellation-png').addEventListener('click', () => {
       this.audio.playChime(880, 0.3);

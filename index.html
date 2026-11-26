@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#171223">
+  <meta name="theme-color" content="#F8F3EB">
   <title>The Forever Club — 2022–2026</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
   <link rel="stylesheet" href="./assets/css/styles.css">
 </head>
 <body>
@@ -15,12 +16,15 @@
       <button type="button" class="chrome-pill" id="btn-home">Universe</button>
       <span class="member-pill" id="nav-member-badge">Private Collection</span>
     </div>
-    <div class="top-bar-group">
-      <button type="button" class="chrome-pill" id="btn-sound" aria-pressed="false">Sound On</button>
-      <button type="button" class="chrome-pill" id="btn-motion" aria-pressed="false">Motion: Full</button>
-      <button type="button" class="chrome-pill" id="btn-switch-member">Switch Star</button>
-      <button type="button" class="chrome-pill" id="btn-replay-ticket">Ticket Desk</button>
-    </div>
+    <details id="club-menu" class="club-menu">
+      <summary>Menu <span aria-hidden="true"></span></summary>
+      <div class="club-menu-panel">
+        <button type="button" class="chrome-pill" id="btn-sound" aria-pressed="false">Sound On</button>
+        <button type="button" class="chrome-pill" id="btn-motion" aria-pressed="false">Motion: Full</button>
+        <button type="button" class="chrome-pill" id="btn-switch-member">Switch Star</button>
+        <button type="button" class="chrome-pill" id="btn-replay-ticket">Ticket Desk</button>
+      </div>
+    </details>
   </header>
 
   <main id="app" aria-live="polite"></main>

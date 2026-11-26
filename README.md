@@ -28,3 +28,22 @@ Or with Python:
 ```bash
 python -m http.server 8000 --directory ./the-forever-club
 ```
+
+## V5 preview and media status
+
+From the repository root, run `python3 -m http.server 8080`. The site uses native
+JavaScript modules and relative URLs for static Cloudflare Pages hosting.
+The production address is https://the-forever-club.pages.dev/.
+
+The repository contains no original photo or video files. In `media.json`, every
+photo slot from `fc-p00` through `fc-p36` has empty `src` and `thumb` fields.
+Every video slot from `fc-v00` through `fc-v40` has empty `src` and `poster`
+fields. These are the exact missing slots. The manifest contains placeholder
+names, so original filenames and paths are unknown. Each slot renders a labelled
+temporary plate or simulated reel.
+
+The source manifest schema remains compatible with original media. When the
+originals are supplied, set each file path and clear its `isPlaceholder` flag.
+Keep each deployed file below 24 MiB. Review the configured draft letters,
+unconfirmed story and quiz photo mappings, and example capsule date in
+`config.json` before the graduation release.

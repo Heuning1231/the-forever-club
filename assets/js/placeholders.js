@@ -3,7 +3,7 @@
 const svgCache = new Map();
 
 /**
- * Generates an editorial architectural-grey & champagne-gold placeholder SVG data URI.
+ * Generates an editorial pearl and champagne-gold placeholder SVG data URI.
  * Never pretends to be real photography; preserves aspect ratio and archive index.
  */
 export function getPlaceholderPhotoSrc(item) {
@@ -19,26 +19,26 @@ export function getPlaceholderPhotoSrc(item) {
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#3a3345"/>
-      <stop offset="55%" stop-color="#2b2533"/>
-      <stop offset="100%" stop-color="#1e1925"/>
+      <stop offset="0%" stop-color="#f8f3eb"/>
+      <stop offset="55%" stop-color="#e9dff3"/>
+      <stop offset="100%" stop-color="#cdb7df"/>
     </linearGradient>
     <radialGradient id="sheen" cx="30%" cy="22%" r="70%">
-      <stop offset="0%" stop-color="#cbb5d9" stop-opacity="0.16"/>
+      <stop offset="0%" stop-color="#fffaf0" stop-opacity="0.16"/>
       <stop offset="100%" stop-color="#171223" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect width="${w}" height="${h}" fill="url(#bg)"/>
   <rect width="${w}" height="${h}" fill="url(#sheen)"/>
-  <rect x="24" y="24" width="${w - 48}" height="${h - 48}" fill="none" stroke="#dcc49a" stroke-opacity="0.28" stroke-width="1.2"/>
+  <rect x="24" y="24" width="${w - 48}" height="${h - 48}" fill="none" stroke="#866443" stroke-opacity="0.28" stroke-width="1.2"/>
   <rect x="34" y="34" width="${w - 68}" height="${h - 68}" fill="none" stroke="#81718f" stroke-opacity="0.22" stroke-width="0.75"/>
-  <g transform="translate(${w / 2}, ${h / 2 - 14})" fill="none" stroke="#dcc49a" stroke-opacity="0.55">
+  <g transform="translate(${w / 2}, ${h / 2 - 14})" fill="none" stroke="#866443" stroke-opacity="0.55">
     <circle r="44" stroke-width="1"/>
     <circle r="60" stroke-width="0.6" stroke-dasharray="3 5"/>
-    <path d="M0 -30 L6 -6 L30 0 L6 6 L0 30 L-6 6 L-30 0 L-6 -6 Z" fill="#dcc49a" fill-opacity="0.18" stroke-width="1"/>
+    <path d="M0 -30 L6 -6 L30 0 L6 6 L0 30 L-6 6 L-30 0 L-6 -6 Z" fill="#866443" fill-opacity="0.18" stroke-width="1"/>
   </g>
-  <text x="${w / 2}" y="${h / 2 + 76}" text-anchor="middle" fill="#f5efe6" fill-opacity="0.82" font-family="Georgia, serif" font-size="22" letter-spacing="4">PLATE ${plate}</text>
-  <text x="${w / 2}" y="${h / 2 + 102}" text-anchor="middle" fill="#dcc49a" fill-opacity="0.62" font-family="sans-serif" font-size="11" letter-spacing="3">ARCHIVAL PLACEHOLDER · THE FOREVER CLUB</text>
+  <text x="${w / 2}" y="${h / 2 + 76}" text-anchor="middle" fill="#51405d" fill-opacity="0.82" font-family="Georgia, serif" font-size="22" letter-spacing="4">PLATE ${plate}</text>
+  <text x="${w / 2}" y="${h / 2 + 102}" text-anchor="middle" fill="#866443" fill-opacity="0.62" font-family="sans-serif" font-size="11" letter-spacing="3">ARCHIVAL PLACEHOLDER · THE FOREVER CLUB</text>
 </svg>`.trim();
 
   const uri = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
@@ -114,7 +114,7 @@ export function mountMediaVideo(container, videoItem, { autoplay = false, onEnde
       <div class="sim-video-overlay">
         <span class="eyebrow">Archival Reel Placeholder</span>
         <strong>${videoItem.label || `Film ${String((videoItem.index ?? 0) + 1).padStart(2, '0')}`}</strong>
-        <span class="muted">Real H.264 stream attaches automatically after media processing</span>
+        <span class="muted">Original video unavailable</span>
       </div>
     </div>
     <div class="sim-video-controls">
@@ -137,11 +137,12 @@ export function mountMediaVideo(container, videoItem, { autoplay = false, onEnde
   let progress = 0; // 0..100
   let rafId = 0;
   let lastTs = 0;
-  const totalSec = 15;
+  const [minutes, seconds] = (videoItem.duration || '00:15').split(':').map(Number);
+  const totalSec = minutes * 60 + seconds || 15;
 
   function formatTime(sec) {
     const s = Math.floor(sec);
-    return `00:${String(s).padStart(2, '0')}`;
+    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
   }
 
   function drawFrame(t) {

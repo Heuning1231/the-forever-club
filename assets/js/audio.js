@@ -2,6 +2,18 @@
 export class RoyalAudio {
   constructor() {
     this.ctx = null;
+    this.interacted = false;
+    const unlock = (event) => {
+      if (!event.isTrusted || event.key === 'Escape') return;
+      this.interacted = true;
+      window.removeEventListener('click', unlock, true);
+      window.removeEventListener('keydown', unlock, true);
+      window.removeEventListener('pointerup', unlock, true);
+      this._ensure();
+    };
+    window.addEventListener('click', unlock, true);
+    window.addEventListener('keydown', unlock, true);
+    window.addEventListener('pointerup', unlock, true);
     this.muted = false;
     try {
       this.muted = localStorage.getItem('fc-sound-muted') === '1';
@@ -9,11 +21,15 @@ export class RoyalAudio {
   }
 
   _ensure() {
-    if (this.muted) return null;
+    if (this.muted || !this.interacted) return null;
     if (!this.ctx) {
       const Ctx = window.AudioContext || window.webkitAudioContext;
       if (!Ctx) return null;
-      this.ctx = new Ctx();
+      try {
+        this.ctx = new Ctx();
+      } catch (_) {
+        return null;
+      }
     }
     if (this.ctx.state === 'suspended') {
       this.ctx.resume().catch(() => {});
