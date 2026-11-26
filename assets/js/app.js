@@ -1,30 +1,22 @@
 import { RoyalAudio } from './audio.js';
-import { resolvePhotoSrc, resolvePosterSrc, mountMediaVideo } from './placeholders.js';
+import { resolvePhotoSrc, mountMediaVideo } from './placeholders.js';
 import { exportMembershipCardPNG, exportBlessingCardPNG, exportConstellationCardPNG, exportRoyalPactPNG } from './cards.js';
-import { CelestialStarfield, mountMemoryOrbit, mountMemoryCrystal, mountConstellationCanvas, isReducedMotion } from './scenes3d.js';
+import { CelestialStarfield, mountMemoryOrbit, mountConstellationCanvas, isReducedMotion } from './scenes3d.js';
 
 const $ = id => document.getElementById(id);
 const glyph = path => `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="${path}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const icons = {
   star: glyph('M16 2l3 11 11 3-11 3-3 11-3-11-11-3 11-3z'),
   crown: glyph('M4 25l2-15 6 6 4-9 4 9 6-6 2 15zM6 28h20'),
-  memories: glyph('M5 7h22v18H5zM7 22l7-7 5 5 3-4 4 5M21 12h.1'),
-  destiny: glyph('M16 3v26M3 16h26M16 6a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM16 11l5 5-5 5-5-5z'),
   letters: glyph('M4 8h24v16H4zM5 9l11 9L27 9'),
-  crystal: glyph('M16 3l9 7v12l-9 7-9-7V10zM16 3l4 13-4 13-4-13zM7 10l5 6m8 0l5 6'),
-  pact: glyph('M8 5h16v18H8zM12 10h8m-8 4h8m-8 4h4m3 5v5l2-1 2 1v-5'),
-  finale: glyph('M7 22l6-15 10 7 3 12zM5 22h4M13 5v4m8 5h4m1 10v4'),
-  capsule: glyph('M11 5h10M11 27h10m-8-22v6l6 10v6m0-22v6l-6 10v6'),
   tea: glyph('M5 13h17v3a8.5 8.5 0 0 1-17 0zm17 1h3a3 3 0 0 1-3 6M4 27h21M11 9l2-4m4 4 2-4'),
   coin: glyph('M16 4a12 12 0 1 0 0 24 12 12 0 0 0 0-24zM16 9l2 5 5 2-5 2-2 5-2-5-5-2 5-2z')
 };
 const destinations = [
-  ['memories', 'Memories', '#bda7df', 21, 21],
-  ['destiny', 'Royal Destiny', '#e7c889', 79, 21],
-  ['letters', 'Letters', '#e4adc5', 15, 50],
-  ['crystal', 'Memory Crystal', '#b4a0dd', 85, 50],
-  ['pact', 'Our Forever Pact', '#e8bd8e', 21, 80],
-  ['finale', 'Final Constellation', '#b2b7e6', 79, 80]
+  ['memories', 'Our Memories', '<i></i><i></i><i></i>'],
+  ['destiny', 'Royal Destiny', '<i></i><i></i><i></i>'],
+  ['letters', 'Across the Stars', `<i></i><i></i><i>${icons.star}</i>`],
+  ['finale', 'Est. Forever', `<i></i><i>${icons.star}</i><i>${icons.star}</i><i>${icons.star}</i><i>${icons.star}</i>`]
 ];
 const promises = [
   '毕业后可以不常见面，但不可以忘记彼此。',
@@ -70,13 +62,12 @@ class ForeverClub {
   constructor() {
     this.audio = new RoyalAudio();
     const saved = readState('fc-v6-state');
-    this.state = { memberIndex: -1, stars: [], eggs: [], seals: [], ...saved };
+    this.state = { memberIndex: -1, eggs: [], seals: [], ...saved };
     const previous = readState('fc-v4-state');
     if (!('memberIndex' in saved) && [1, 2, 3].includes(previous.memberIndex)) {
       this.state.memberIndex = previous.memberIndex;
     }
     this.cleanup = [];
-    this.pendingStars = new Set();
     this.memoryPage = 0;
   }
 
@@ -180,21 +171,12 @@ class ForeverClub {
     this.cleanup.push(() => clearTimeout(timer));
   }
 
-  award(id) {
-    if (this.state.stars.includes(id)) return;
-    this.state.stars.push(id);
-    this.pendingStars.add(id);
-    this.save();
-  }
-
   egg(id, title, body, download = null) {
     if (!this.state.eggs.includes(id)) {
       this.state.eggs.push(id);
-      this.award(`egg-${id}`);
       this.save();
     }
     if (!title) return;
-    $('egg-count').textContent = `Celestial Secret · ${this.state.eggs.length} / 5`;
     $('egg-title').textContent = title;
     $('egg-body').textContent = body;
     $('egg-download').classList.toggle('hidden', !download);
@@ -250,7 +232,6 @@ class ForeverClub {
       this.audio.playPaperUnfold();
       burst(feed, 13, 'paper');
       burst(feed, 28);
-      this.award('ticket');
       this.later(() => this.invitation(), reduced ? 0 : 760);
     };
     const resetPull = () => {
@@ -302,7 +283,6 @@ class ForeverClub {
       envelope.disabled = true;
       envelope.classList.add('is-open');
       this.audio.playPaperUnfold();
-      this.award('invitation');
       burst(envelope, 30);
       this.later(() => this.identities(), isReducedMotion() ? 0 : 860);
     };
@@ -358,65 +338,38 @@ class ForeverClub {
     const reset = () => ['--rx', '--ry', '--reflect'].forEach(key => pass.style.removeProperty(key));
     pass.onpointerup = pass.onpointerleave = pass.onpointercancel = reset;
     $('download-pass').onclick = () => exportMembershipCardPNG(member);
-    $('enter-universe').onclick = () => {
-      this.award(`pass-${member.id}`);
-      this.universe();
-    };
+    $('enter-universe').onclick = () => this.universe();
   }
 
   universe() {
     if (!this.member) return this.identities();
-    const planets = destinations.map(([id, name, color, x, y]) => `
-      <button type="button" class="celestial-destination" data-destination="${id}" style="--planet:${color};--x:${x}%;--y:${y}%">
-        <span class="celestial-globe">${icons[id]}</span><span>${name}</span>
+    const objects = destinations.map(([id, name, sculpture]) => `
+      <button type="button" class="celestial-destination" data-destination="${id}">
+        <span class="celestial-object" aria-hidden="true">${sculpture}</span><span class="destination-name">${name}</span>
       </button>`).join('');
     this.section('universe', 'Our Little Universe', `
-      <div class="universe-map" id="universe-map">
+      <nav class="universe-map celestial-sky" id="universe-map" aria-label="Explore the universe">
         <div class="map-ribbon ribbon-one"></div><div class="map-ribbon ribbon-two"></div>
-        ${planets}
-        <button type="button" id="universe-heart" class="universe-heart" aria-label="Royal crown"><span>${icons.crown}</span><small id="starlight-count">${this.state.stars.length} starlight</small></button>
-      </div>
-      <button type="button" class="capsule-entrance" data-destination="capsule">${icons.capsule}<span>Future Time Capsule</span></button>`, 'The Forever Club · 2022–2026');
+        <div class="map-starlight" aria-hidden="true">${icons.star}</div>
+        ${objects}
+      </nav>`, 'The Forever Club · 2022–2026');
     document.querySelectorAll('[data-destination]').forEach(button => {
       button.onclick = () => {
         this.audio.playChime();
         this[button.dataset.destination]();
       };
     });
-    $('universe-heart').onclick = () => {
-      this.egg('crown', 'Lifetime Friendship Membership', 'Your seat in The Forever Club is reserved for every era.');
-      this.collectStarlight();
-    };
-    this.collectStarlight();
-  }
-
-  collectStarlight() {
-    const map = $('universe-map');
-    $('starlight-count').textContent = `${this.state.stars.length} starlight`;
-    if (this.pendingStars.size && !isReducedMotion()) {
-      const count = Math.min(this.pendingStars.size, 10);
-      for (let i = 0; i < count; i++) {
-        const star = document.createElement('i');
-        star.className = 'returning-star';
-        star.style.setProperty('--x', `${(i % 2 ? -1 : 1) * (65 + i * 13)}px`);
-        star.style.setProperty('--y', `${-120 + i * 23}px`);
-        star.style.animationDelay = `${i * 90}ms`;
-        map.append(star);
-        this.later(() => star.remove(), 2000);
-      }
-    }
-    this.pendingStars.clear();
   }
 
   memories() {
     const count = Math.max(1, Math.ceil(this.memoryItems.length / batchSize));
-    this.section('memories', 'Memory Waterfall', `
+    this.section('memories', 'Our Memories', `
       <div class="memory-controls">
         <button type="button" class="btn-gold-primary" id="play-memories" ${this.memoryItems.length ? '' : 'disabled'}>Play Our Memories</button>
       </div>
       <div id="memory-space" class="orbit-container memory-space"></div>
       <div class="memory-pages"><button type="button" id="memory-prev" class="btn-gold-outline" aria-label="Previous memories">←</button>
-        <output id="memory-page" aria-live="polite"></output><button type="button" id="memory-next" class="btn-gold-outline" aria-label="Next memories">→</button></div>`, 'Photos & Films');
+        <output id="memory-page" aria-live="polite"></output><button type="button" id="memory-next" class="btn-gold-outline" aria-label="Next memories">→</button></div>`, 'The Memory Waterfall');
     let orbit;
     const show = direction => {
       this.memoryPage = (this.memoryPage + direction + count) % count;
@@ -455,12 +408,23 @@ class ForeverClub {
     const stage = $('modal-stage');
     const returnFocus = document.activeElement;
     let index = this.memoryItems.indexOf(item);
-    let paused = isReducedMotion();
+    let playing = cinematic;
     let timer;
     let controller;
     stage.innerHTML = `<div id="memory-display" class="memory-display"></div><p id="memory-caption" class="memory-caption"></p>
-      ${cinematic ? `<div class="action-row memory-player-controls"><button type="button" id="slide-prev" class="btn-gold-outline">Previous</button><button type="button" id="slide-pause" class="btn-gold-outline"></button><button type="button" id="slide-next" class="btn-gold-outline">Next</button></div>` : ''}`;
-    const show = (step = 0) => {
+      <div class="action-row memory-player-controls">
+        <button type="button" id="slide-prev" class="btn-gold-outline">Previous</button>
+        <button type="button" id="slide-pause" class="btn-gold-outline"></button>
+        <button type="button" id="slide-next" class="btn-gold-outline">Next</button>
+      </div>`;
+    const playButton = $('slide-pause');
+    const updatePlaybackLabel = () => {
+      playButton.textContent = playing ? 'Pause slideshow' : 'Play slideshow';
+    };
+    const schedulePhoto = () => {
+      if (playing) timer = setTimeout(() => show(1), 4500);
+    };
+    const show = (step = 0, playVideo = playing) => {
       clearTimeout(timer);
       controller?.destroy();
       controller = null;
@@ -469,38 +433,35 @@ class ForeverClub {
       const display = $('memory-display');
       display.replaceChildren();
       $('memory-caption').textContent = current.label;
-      this.award(`memory-${current.id}`);
       if (current.type === 'video') {
         controller = mountMediaVideo(display, current, {
-          autoplay: cinematic ? !paused : Boolean(!current.isPlaceholder && current.src),
-          onEnded: () => { if (cinematic && !paused) show(1); }
+          autoplay: playVideo,
+          onEnded: () => { if (playing) show(1); }
         });
       } else {
         const photo = document.createElement('img');
         photo.src = resolvePhotoSrc(current);
         photo.alt = current.label;
-        if (cinematic && !paused && !isReducedMotion()) photo.className = 'cine-ken-burns';
+        if (playing && !isReducedMotion()) photo.className = 'cine-ken-burns';
         display.append(photo);
-        if (cinematic && !paused) timer = setTimeout(() => show(1), 4500);
+        schedulePhoto();
       }
     };
-    if (cinematic) {
-      $('slide-pause').textContent = paused ? 'Resume' : 'Pause';
-      $('slide-pause').onclick = () => {
-        paused = !paused;
-        $('slide-pause').textContent = paused ? 'Resume' : 'Pause';
-        clearTimeout(timer);
-        if (controller) {
-          if (paused) controller.pause();
-          else Promise.resolve(controller.play()).catch(() => {});
-        } else {
-          $('memory-display').querySelector('img').style.animationPlayState = paused ? 'paused' : 'running';
-          if (!paused) timer = setTimeout(() => show(1), 4500);
-        }
-      };
-      $('slide-prev').onclick = () => show(-1);
-      $('slide-next').onclick = () => show(1);
-    }
+    updatePlaybackLabel();
+    playButton.onclick = () => {
+      playing = !playing;
+      updatePlaybackLabel();
+      clearTimeout(timer);
+      if (controller) {
+        if (playing) Promise.resolve(controller.play()).catch(() => {});
+        else controller.pause();
+      } else {
+        $('memory-display').querySelector('img').style.animationPlayState = playing ? 'running' : 'paused';
+        schedulePhoto();
+      }
+    };
+    $('slide-prev').onclick = () => show(-1);
+    $('slide-next').onclick = () => show(1);
     dialog.classList.remove('hidden');
     dialog.showModal();
     this.mediaCleanup = () => {
@@ -508,7 +469,7 @@ class ForeverClub {
       controller?.destroy();
       if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
     };
-    show();
+    show(0, playing || Boolean(item.type === 'video' && !item.isPlaceholder && item.src));
   }
 
   closeMedia() {
@@ -525,61 +486,80 @@ class ForeverClub {
     if (!this.member) return this.identities();
     const member = this.member;
     const { sender, shared, personal } = this.letterConfig;
-    this.section('letters', 'A Letter Across the Stars', `
+    const sealed = this.state.seals.includes(member.id);
+    this.section('letters', 'Across the Stars', `
       <button type="button" class="v6-envelope letter-envelope" id="open-letter" aria-label="Unseal your letter">
         <span class="envelope-sheet"><strong>For ${member.name}</strong><em>From ${escapeHTML(sender)}</em></span>
         <span class="envelope-pocket"></span><span class="envelope-flap"></span><span class="v6-seal">${icons.letters}</span>
       </button>
       <p class="invitation-caption" id="letter-prompt">Unseal Your Letter</p>
-      <article id="graduation-letter" class="v6-stationery hidden" lang="zh">
-        <span class="eyebrow">From ${escapeHTML(sender)}</span><h2>For ${member.name}</h2>
-        <p id="letter-body" class="handwritten"></p><p class="letter-signature" lang="en">With love,<br>${escapeHTML(sender)}</p>
+      <article id="graduation-letter" class="v6-stationery letter-page hidden" aria-labelledby="letter-heading">
+        <span class="eyebrow">From ${escapeHTML(sender)}</span><h2 id="letter-heading" tabindex="-1">For ${member.name}</h2>
+        <p id="letter-body" class="handwritten" lang="zh"></p><p class="letter-signature">With love,<br>${escapeHTML(sender)}</p>
+        <button type="button" id="turn-to-pact" class="btn-gold-primary">Turn to the Forever Pact →</button>
+      </article>
+      <article id="pact-page" class="v6-stationery letter-page pact-paper hidden" aria-labelledby="pact-heading">
+        <span class="eyebrow">The final page</span>
+        <h2 id="pact-heading" tabindex="-1">Our Forever Pact</h2>
+        <div class="pact-names">${this.config.members.map(m => `<span>${m.name}</span>`).join('')}</div>
+        <ul class="pact-promises" lang="zh">${promises.map(p => `<li>${p}</li>`).join('')}</ul>
+        <div id="pact-seal" class="personal-seal ${sealed ? '' : 'hidden'}"><span>${member.sealMonogram}</span><small>Sealed by ${member.name} on this device</small></div>
+        <div class="action-row">
+          <button type="button" id="seal-pact" class="btn-gold-primary ${sealed ? 'hidden' : ''}">Place My Royal Seal</button>
+          <button type="button" id="download-pact" class="btn-gold-outline ${sealed ? '' : 'hidden'}">Save Pact PNG</button>
+          <button type="button" id="return-to-letter" class="btn-gold-outline">← Back to Letter</button>
+        </div>
+        <button type="button" class="discovery-glyph pact-crown" id="hidden-crown" aria-label="Royal crown ornament">${icons.crown}</button>
+        <button type="button" class="discovery-glyph teacup" id="hidden-teacup" aria-label="Teacup ornament">${icons.tea}</button>
       </article>`, `For ${member.name}`);
+
+    const text = [shared, personal?.[member.id]].filter(Boolean).join('\n\n');
+    let typing;
+    this.cleanup.push(() => clearInterval(typing));
+    const focusPage = id => {
+      $(id).focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+    };
+    $('turn-to-pact').onclick = () => {
+      clearInterval(typing);
+      $('letter-body').textContent = text;
+      $('graduation-letter').classList.add('hidden');
+      $('pact-page').classList.remove('hidden');
+      this.audio.playPaperUnfold();
+      focusPage('pact-heading');
+    };
+    $('return-to-letter').onclick = () => {
+      $('pact-page').classList.add('hidden');
+      $('graduation-letter').classList.remove('hidden');
+      focusPage('letter-heading');
+    };
     $('open-letter').onclick = event => {
       const envelope = event.currentTarget;
       envelope.disabled = true;
       envelope.classList.add('is-open');
       this.audio.playPaperUnfold();
-      this.award(`letter-${member.id}`);
-      const text = [shared, personal?.[member.id]].filter(Boolean).join('\n\n');
       this.later(() => {
         envelope.classList.add('hidden');
         $('letter-prompt').classList.add('hidden');
         $('graduation-letter').classList.remove('hidden');
+        focusPage('letter-heading');
         const body = $('letter-body');
         if (isReducedMotion()) {
           body.textContent = text;
           return;
         }
         let visible = 0;
-        const timer = setInterval(() => {
+        typing = setInterval(() => {
           visible += 4;
           body.textContent = text.slice(0, visible);
-          if (visible >= text.length) clearInterval(timer);
+          if (visible >= text.length) clearInterval(typing);
         }, 28);
-        this.cleanup.push(() => clearInterval(timer));
       }, isReducedMotion() ? 0 : 690);
     };
-  }
-
-  pact() {
-    if (!this.member) return this.identities();
-    const member = this.member;
-    const sealed = this.state.seals.includes(member.id);
-    this.section('pact', 'Our Forever Pact', `
-      <article class="v6-stationery pact-paper">
-        <div class="pact-names">${this.config.members.map(m => `<span>${m.name}</span>`).join('')}</div>
-        <ul class="pact-promises" lang="zh">${promises.map(p => `<li>${p}</li>`).join('')}</ul>
-        <div id="pact-seal" class="personal-seal ${sealed ? '' : 'hidden'}"><span>${member.sealMonogram}</span><small>Sealed by ${member.name} on this device</small></div>
-        <button type="button" id="seal-pact" class="btn-gold-primary ${sealed ? 'hidden' : ''}">Place My Royal Seal</button>
-        <button type="button" id="download-pact" class="btn-gold-outline ${sealed ? '' : 'hidden'}">Save Pact PNG</button>
-        <button type="button" class="discovery-glyph teacup" id="hidden-teacup" aria-label="Teacup ornament">${icons.tea}</button>
-      </article>`, 'The Royal Friendship Contract');
     $('seal-pact').onclick = () => {
       if (this.state.seals.includes(member.id)) return;
       this.state.seals.push(member.id);
       this.save();
-      this.award(`pact-${member.id}`);
       this.audio.playTicketCollect();
       $('pact-seal').classList.remove('hidden');
       $('pact-seal').classList.add('is-stamped');
@@ -589,6 +569,7 @@ class ForeverClub {
       burst($('pact-seal'));
     };
     $('download-pact').onclick = () => exportRoyalPactPNG(this.config.members, promises, member);
+    $('hidden-crown').onclick = () => this.egg('crown', 'Lifetime Friendship Membership', 'Your seat in The Forever Club is reserved for every era.');
     $('hidden-teacup').onclick = () => this.egg('teacup', 'Lifetime Mamak Invitation', 'There will always be room for all four of us at the same table.');
   }
 
@@ -622,7 +603,6 @@ class ForeverClub {
         spinning = false;
         $('destiny-result').textContent = blessing;
         $('save-destiny').classList.remove('hidden');
-        this.award(`destiny-${blessing}`);
         this.audio.playCrystalRelease();
         burst(wheel.parentElement, 28);
       }, isReducedMotion() ? 0 : 1600);
@@ -646,103 +626,26 @@ class ForeverClub {
     };
   }
 
-  crystal() {
-    this.section('crystal', 'Memory Crystal', `<div id="crystal-mount"></div>
-      <button type="button" class="btn-gold-primary" id="crystal-memory" ${this.memoryItems.length ? '' : 'disabled'}>Reveal a Memory</button>`, 'An Amethyst Keepsake');
-    const reveal = () => {
-      const item = this.randomMemory();
-      if (!item) return;
-      this.award('crystal');
-      this.audio.playCrystalRelease();
-      this.openMemory(item);
-    };
-    const crystal = mountMemoryCrystal($('crystal-mount'), { onReleaseMemory: reveal });
-    this.cleanup.push(() => crystal.destroy());
-    $('crystal-memory').onclick = reveal;
-  }
-
-  capsule() {
-    const capsule = this.config.timeCapsule;
-    this.section('capsule', 'Future Time Capsule', `
-      <div class="capsule-dome v6-capsule">
-        <div class="capsule-emblem">${icons.capsule}</div>
-        <span class="eyebrow" id="capsule-state">Sealed for the future</span>
-        <div class="capsule-countdown">${['days', 'hours', 'minutes', 'seconds'].map(unit => `<div><strong id="cd-${unit}">00</strong><span>${unit}</span></div>`).join('')}</div>
-        <p class="muted">${escapeHTML(capsule.dateNote)}</p>
-        <button type="button" id="preview-capsule" class="btn-gold-outline">Preview the Letter</button>
-      </div>
-      <article class="v6-stationery hidden" id="capsule-letter"><h2>${escapeHTML(capsule.letterTitle)}</h2><p class="handwritten">${escapeHTML(capsule.letterBody)}</p></article>`);
-    const date = Date.parse(capsule.unlockDate);
-    let preview = false;
-    const reveal = () => $('capsule-letter').classList.remove('hidden');
-    const update = () => {
-      const remaining = Number.isFinite(date) ? Math.max(0, Math.ceil((date - Date.now()) / 1000)) : 0;
-      const values = [Math.floor(remaining / 86400), Math.floor(remaining / 3600) % 24, Math.floor(remaining / 60) % 60, remaining % 60];
-      ['days', 'hours', 'minutes', 'seconds'].forEach((unit, index) => {
-        $('cd-' + unit).textContent = String(values[index]).padStart(2, '0');
-      });
-      if (Number.isFinite(date) && remaining === 0) {
-        $('capsule-state').textContent = 'Unlocked';
-        $('preview-capsule').classList.add('hidden');
-        reveal();
-      } else if (!preview && !Number.isFinite(date)) {
-        $('capsule-state').textContent = 'Unlock date to be confirmed';
-      }
-    };
-    update();
-    const timer = setInterval(update, 1000);
-    this.cleanup.push(() => clearInterval(timer));
-    $('preview-capsule').onclick = () => {
-      preview = true;
-      $('capsule-state').textContent = 'Letter preview';
-      this.audio.playPaperUnfold();
-      this.award('capsule');
-      reveal();
-    };
-  }
-
   finale() {
-    this.section('finale', 'Our Forever Constellation', `
+    this.section('finale', 'Est. Forever', `
       <div class="finale-sky" id="finale-sky"><div id="finale-stars"></div></div>
-      <p id="finale-instruction">Connect our four stars</p>
-      <div id="finale-memories" class="finale-memories"></div>
-      <div id="finale-message" class="finale-message hidden">${this.config.finale.poemLines.map(line => `<p>${escapeHTML(line)}</p>`).join('')}
+      <p class="finale-invitation">Touch the stars to light our constellation.</p>
+      <div id="finale-message" class="finale-message">${this.config.finale.poemLines.map(line => `<p>${escapeHTML(line)}</p>`).join('')}
         <button type="button" id="save-finale" class="btn-gold-outline">Save Constellation PNG</button>
-      </div>`, 'The Forever Club · Est. Forever');
+      </div>`, 'Our Forever Constellation');
     const members = this.config.members.map((member, index) => ({
       ...member, starCoords: { x: memberPositions[index][0], y: memberPositions[index][1] }
     }));
     const ctrl = mountConstellationCanvas($('finale-stars'), members, {
-      onStarLit: (index, count) => {
+      onStarLit: index => {
         this.audio.playConstellationStar(index);
-        $('finale-instruction').textContent = `${count} / 4 stars connected`;
         if (index === 3) this.egg('fourth', 'Four Stars, One Sky', 'KAHEAN, Líng Lëé, Jia Qi and yimin_04. Wherever we go, there will always be four stars in this sky.');
       },
       onAllLit: () => {
-        this.award('finale');
         this.audio.playFinaleChord();
         const sky = $('finale-sky');
         sky.classList.add('is-aligned');
-        burst(sky, Math.min(42, 10 + this.state.stars.length * 2));
-        const originals = this.memoryItems.filter(item => !item.isPlaceholder && item.src);
-        const keepsakes = (originals.length ? originals : this.media.photos).slice(0, 4);
-        keepsakes.forEach((item, index) => {
-          this.later(() => {
-            const frame = document.createElement('button');
-            frame.type = 'button';
-            frame.className = 'finale-frame';
-            const photo = document.createElement('img');
-            photo.loading = 'lazy';
-            photo.src = item.type === 'video' ? resolvePosterSrc(item) : resolvePhotoSrc(item);
-            photo.alt = item.label;
-            frame.append(photo);
-            frame.onclick = () => this.openMemory(item);
-            $('finale-memories').append(frame);
-          }, isReducedMotion() ? 0 : 330 + index * 170);
-        });
-        this.later(() => {
-          $('finale-message').classList.remove('hidden');
-        }, isReducedMotion() ? 0 : 940);
+        burst(sky, 32);
       }
     });
     this.cleanup.push(() => ctrl.destroy());

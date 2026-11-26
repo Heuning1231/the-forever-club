@@ -2,9 +2,17 @@
 
 An interactive graduation keepsake for KAHEAN, Líng Lëé, Jia Qi, and yimin_04.
 The visitor journey starts at the royal ticket printer and opens into a
-single-screen map of the seven experiences. Golden starlight, revealed secrets,
-the selected identity, and personal pact seals are stored on the current device.
-Every destination, including the finale, is available as soon as the map opens.
+single-screen map with four destinations.
+
+- **Our Memories** is the 3D Memory Waterfall. Open any photo or video in the
+  fullscreen viewer, and start or pause cinematic playback in that same viewer.
+- **Royal Destiny** is the interactive fortune instrument.
+- **Across the Stars** is the personalized graduation letter. Turn to its final
+  page to read, seal, or download the Forever Pact.
+- **Est. Forever** is the four-star constellation and graduation message.
+
+Every destination is available as soon as the map opens. The selected identity,
+discovered secrets, and personal pact seals stay on the current device.
 
 ## Local preview
 
@@ -15,9 +23,7 @@ The production address is https://the-forever-club.pages.dev/.
 
 ## Content files
 
-- `config.json` holds the four members, blessings, finale text, and Future Time
-  Capsule content. The January 1, 2030 date is provisional. The countdown is
-  a presentation feature and the static letter content is publicly readable.
+- `config.json` holds the four members, blessings, finale text, and ticket artwork setting.
 - `letters.json` holds Kahean's provisional shared letter and a separate empty
   paragraph field for each of the three recipients.
 - `config.json` → `ticketArtwork` accepts a local image path for the original

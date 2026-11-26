@@ -144,10 +144,6 @@ button:focus-visible, summary:focus-visible, [tabindex]:focus-visible { outline:
 .orbit-hidden-node { position: absolute; z-index: 40; display: grid; place-items: center; border-radius: 50%; transition: transform .25s; }
 .orbit-hidden-node:hover { transform: scale(1.15); }
 
-.crystal-stage { display: flex; flex-direction: column; align-items: center; margin: .75rem auto; }
-.crystal-canvas { cursor: grab; touch-action: none; }
-.crystal-canvas:active { cursor: grabbing; }
-.capsule-dome { border: 1.5px solid var(--border-gold); background: radial-gradient(ellipse at 25% 14%, #fff, #f7ecf5 40%, #dcc5e8); box-shadow: var(--layer-shadow); }
 .constellation-stage { position: relative; max-width: 520px; height: 360px; margin: 1.25rem auto; border: 1px solid var(--border-gold); overflow: hidden; }
 .constellation-canvas, .constellation-buttons { position: absolute; inset: 0; width: 100%; height: 100%; }
 .constellation-star-btn { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; }
