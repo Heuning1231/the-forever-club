@@ -1,32 +1,42 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Forever Club</title>
-<style>
-body {
-  margin: 0;
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  background: radial-gradient(ellipse, #34283F, #171223);
-  color: #F5EFE6;
-  font-family: Georgia, serif;
-}
-h1 { font-size: 42px; font-weight: normal; }
-small { color: #DCC49A; letter-spacing: 4px; }
-p { color: #CBB5D9; }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#171223">
+  <title>The Forever Club — 2022–2026</title>
+  <link rel="stylesheet" href="./assets/css/styles.css">
 </head>
 <body>
-<div>
-<small>PRIVATE INVITATION</small>
-<h1>The Forever Club</h1>
-<p>Four Girls. One Universe. Infinite Memories.</p>
-<p>Coming Soon</p>
-<small>EST. FOREVER</small>
-</div>
+  <canvas id="bg-stars" aria-hidden="true"></canvas>
+
+  <header id="top-bar" class="top-bar is-hidden">
+    <div class="top-bar-group">
+      <button type="button" class="chrome-pill" id="btn-home">Universe</button>
+      <span class="member-pill" id="nav-member-badge">Private Collection</span>
+    </div>
+    <div class="top-bar-group">
+      <button type="button" class="chrome-pill" id="btn-sound" aria-pressed="false">Sound On</button>
+      <button type="button" class="chrome-pill" id="btn-motion" aria-pressed="false">Motion: Full</button>
+      <button type="button" class="chrome-pill" id="btn-switch-member">Switch Star</button>
+      <button type="button" class="chrome-pill" id="btn-replay-ticket">Ticket Desk</button>
+    </div>
+  </header>
+
+  <main id="app" aria-live="polite"></main>
+
+  <div id="media-modal" class="media-modal hidden" role="dialog" aria-modal="true" aria-label="Memory viewer">
+    <button type="button" class="modal-close-btn" id="modal-close" aria-label="Close viewer">Close</button>
+    <div class="modal-stage" id="modal-stage"></div>
+  </div>
+
+  <aside id="egg-toast" class="egg-toast hidden" role="status" aria-live="polite">
+    <span class="eyebrow" id="egg-count">Celestial Secret</span>
+    <h3 id="egg-title"></h3>
+    <p id="egg-body" class="muted"></p>
+    <button type="button" class="btn-gold-outline" id="egg-close">Acknowledge</button>
+  </aside>
+
+  <script type="module" src="./assets/js/app.js"></script>
 </body>
 </html>
