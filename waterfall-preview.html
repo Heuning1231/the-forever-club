@@ -3,40 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#170e29">
+  <meta name="theme-color" content="#21142d">
   <title>Memory Waterfall · The Forever Club</title>
-  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
   <link rel="stylesheet" href="./waterfall-preview/preview.css">
 </head>
 <body>
   <main class="waterfall">
-    <canvas id="waterfall-canvas" aria-label="Three-dimensional Polaroids cascading through lavender clouds and golden light"></canvas>
-
-    <header class="masthead">
-      <span class="club-mark" aria-hidden="true"></span>
-      <span>The Forever Club</span>
-    </header>
-
-    <div class="waterfall-title">
+    <canvas id="waterfall-canvas" aria-label="Polaroids falling through a lavender cloud canyon"></canvas>
+    <header>
+      <p>The Forever Club</p>
       <h1>Memory <em>Waterfall</em></h1>
-    </div>
-
+    </header>
     <p id="render-status" role="status">Opening the archive…</p>
-
-    <footer class="controls">
-      <p id="archive-note" hidden>Original photographs unavailable · Abstract archive plates</p>
-      <div class="controls-bottom">
-        <span class="gesture" aria-hidden="true">Drag to drift</span>
-        <button id="motion-toggle" type="button" disabled>Pause flow</button>
+    <footer>
+      <p id="gesture">Drag to drift · Tap to open</p>
+      <div class="controls" hidden>
+        <button id="motion-toggle" type="button">Pause flow</button>
+        <button id="cinematic" type="button" aria-pressed="false">Cinematic</button>
       </div>
     </footer>
-
-    <dialog id="archive-viewer" aria-label="Archive photograph">
-      <button id="close-archive" type="button" autofocus>Close</button>
-      <figure>
-        <img id="archive-image" alt="">
-        <figcaption id="archive-caption"></figcaption>
-      </figure>
+    <section id="fallback" aria-label="Archive preview" hidden></section>
+    <dialog id="archive-viewer" aria-label="Memory viewer">
+      <form method="dialog"><button type="submit" autofocus>Close</button></form>
+      <figure id="archive-media"></figure>
     </dialog>
   </main>
   <script type="module" src="./waterfall-preview/waterfall.bundle.js"></script>

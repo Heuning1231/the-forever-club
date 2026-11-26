@@ -1,484 +1,426 @@
 import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { FXAAPass } from 'three/addons/postprocessing/FXAAPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { skyVertex, skyFragment, ribbonVertex, ribbonFragment, dustVertex, dustFragment } from './shaders.js';
+import { ribbonVertex, ribbonFragment } from './shaders.js';
 
 const canvas = document.querySelector('#waterfall-canvas');
 const status = document.querySelector('#render-status');
-const motionButton = document.querySelector('#motion-toggle');
 const viewer = document.querySelector('#archive-viewer');
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-const imageLoader = new THREE.ImageLoader();
-const faces = new Map();
-const width = 1.55;
-const height = 1.96;
-const depth = .094;
+const media = document.querySelector('#archive-media');
+const motion = document.querySelector('#motion-toggle');
+const cinematic = document.querySelector('#cinematic');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+const asset = (name) => './waterfall-preview/' + name;
+const plate = (item) => asset('plate-' + ((item.index + (item.type === 'video' ? 4 : 0)) % 6 + 1) + '.webp');
+const preview = (item) => (item.type === 'video' ? item.poster : item.thumb || item.src) || plate(item);
+const clamp = THREE.MathUtils.clamp;
+const mix = THREE.MathUtils.lerp;
 
-function randomFrom(seed) {
-  let state = seed;
-  return () => {
-    state = (Math.imul(1664525, state) + 1013904223) >>> 0;
-    return state / 4294967296;
-  };
+function openMemory(item) {
+  const video = item.type === 'video';
+  const element = document.createElement(video ? 'video' : 'img');
+  if (video) {
+    element.controls = true;
+    element.playsInline = true;
+    element.poster = preview(item);
+    element.src = item.src || asset('sample-reel.webm');
+  } else {
+    element.src = item.src || plate(item);
+    element.alt = item.src ? item.label : 'Neutral placeholder photograph';
+  }
+  const caption = document.createElement('figcaption');
+  caption.textContent = item.label + (item.src ? '' : video ? ' · Sample reel' : ' · Placeholder photograph');
+  media.replaceChildren(element, caption);
+  viewer.showModal();
+  if (video) element.play().catch(() => {});
 }
 
-function roundedPaper() {
-  const shape = new THREE.Shape();
-  const x = width / 2;
-  const y = height / 2;
-  const radius = .039;
-  shape.moveTo(-x + radius, -y);
-  shape.lineTo(x - radius, -y);
-  shape.quadraticCurveTo(x, -y, x, -y + radius);
-  shape.lineTo(x, y - radius);
-  shape.quadraticCurveTo(x, y, x - radius, y);
-  shape.lineTo(-x + radius, y);
-  shape.quadraticCurveTo(-x, y, -x, y - radius);
-  shape.lineTo(-x, -y + radius);
-  shape.quadraticCurveTo(-x, -y, -x + radius, -y);
-  return new THREE.ExtrudeGeometry(shape, {
-    depth,
-    steps: 1,
-    curveSegments: 4,
-    bevelEnabled: true,
-    bevelSegments: 2,
-    bevelSize: .02,
-    bevelThickness: .016
-  });
+viewer.addEventListener('close', () => {
+  const video = media.querySelector('video');
+  if (video) {
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+  }
+  media.replaceChildren();
+});
+
+function fallback(items, message) {
+  status.textContent = message;
+  status.hidden = false;
+  document.querySelector('.controls').hidden = true;
+  document.querySelector('#gesture').hidden = true;
+  const list = document.querySelector('#fallback');
+  list.replaceChildren(...items.map(item => {
+    const button = document.createElement('button');
+    button.textContent = item.label;
+    button.onclick = () => openMemory(item);
+    return button;
+  }));
+  list.hidden = false;
 }
 
-function paintPlate(context, tools, item) {
-  const { w, h } = tools;
-  const random = randomFrom(item.index + 91);
-  const colors = [
-    ['#1c152f', '#a877ad', '#f6cdc4'],
-    ['#211830', '#6b74b3', '#f3c7df'],
-    ['#371e39', '#b97092', '#f8ddb3'],
-    ['#22233f', '#8474ad', '#a7d4dd'],
-    ['#291632', '#9c77b8', '#ffe4bd']
-  ];
-  const [ink, middle, light] = colors[item.index % colors.length];
-  const background = context.createLinearGradient(0, h, w, 0);
-  background.addColorStop(0, ink);
-  background.addColorStop(.57, middle);
-  background.addColorStop(1, ink);
-  context.fillStyle = background;
-  context.fillRect(0, 0, w, h);
-  context.globalCompositeOperation = 'screen';
-  for (let i = 0; i < 24; i++) {
-    const x = w * (.07 + random() * .85);
-    const y = h * (.18 + random() * .66);
-    const radius = w * (.11 + random() * .35);
-    const fog = context.createRadialGradient(x, y, 0, x, y, radius);
-    fog.addColorStop(0, i % 2 ? middle + '68' : light + '38');
-    fog.addColorStop(1, middle + '00');
-    context.fillStyle = fog;
-    context.fillRect(0, 0, w, h);
+function paperTexture() {
+  const image = document.createElement('canvas');
+  image.width = image.height = 128;
+  const context = image.getContext('2d');
+  const pixels = context.createImageData(128, 128);
+  for (let i = 0; i < pixels.data.length; i += 4) {
+    const grain = Math.floor(Math.random() * 19);
+    pixels.data.set([253 - grain, 242 - grain, 223 - grain, 255], i);
   }
-  context.save();
-  context.translate(w * .54, h * .49);
-  context.rotate((item.index % 5 - 2) * .13 - .4);
-  for (let i = 0; i < 6; i++) {
-    context.lineWidth = i % 3 === 0 ? .85 : .35;
-    context.strokeStyle = light + (i % 3 === 0 ? 'b0' : '64');
-    context.beginPath();
-    context.ellipse(0, 0, w * (.22 + i * .035), h * (.10 + i * .024), -.15, .18, Math.PI * 1.96);
-    context.stroke();
-  }
-  context.restore();
-  for (let i = 0; i < 90; i++) {
-    context.fillStyle = light + (i % 6 === 0 ? 'ef' : '75');
-    const size = i % 9 === 0 ? 1.7 : .7;
-    context.fillRect(random() * w, random() * h, size, size);
-  }
-  const cx = w * .55;
-  const cy = h * .47;
-  context.fillStyle = '#fff2d3';
-  context.beginPath();
-  for (let i = 0; i < 8; i++) {
-    const angle = i * Math.PI / 4;
-    const r = i % 2 ? 2 : 11;
-    context.lineTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
-  }
-  context.fill();
-  context.globalCompositeOperation = 'source-over';
-}
-
-function drawPhoto(context, image, x, y, w, h) {
-  const scale = Math.max(w / image.width, h / image.height);
-  const sourceWidth = w / scale;
-  const sourceHeight = h / scale;
-  context.drawImage(image, (image.width - sourceWidth) / 2, (image.height - sourceHeight) / 2, sourceWidth, sourceHeight, x, y, w, h);
-}
-
-function faceFor(item, invalidate) {
-  if (faces.has(item.id)) return faces.get(item.id);
-  const plate = document.createElement('canvas');
-  plate.width = 384;
-  plate.height = 480;
-  const context = plate.getContext('2d');
-  const texture = new THREE.CanvasTexture(plate);
+  context.putImageData(pixels, 0, 0);
+  const texture = new THREE.CanvasTexture(image);
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 4;
-  const w = 348;
-  const h = 366;
-  const draw = image => {
-    const paper = context.createLinearGradient(0, 0, 384, 480);
-    paper.addColorStop(0, '#fff3d9');
-    paper.addColorStop(1, '#dcbb9d');
-    context.fillStyle = paper;
-    context.fillRect(0, 0, 384, 480);
-    context.fillStyle = '#966f64';
-    context.fillRect(17, 17, w + 2, h + 2);
-    context.save();
-    context.translate(18, 18);
-    if (image) drawPhoto(context, image, 0, 0, w, h);
-    else paintPlate(context, { w, h }, item);
-    context.restore();
-    context.textAlign = 'center';
-    context.fillStyle = '#69485f';
-    context.font = 'italic 24px Georgia';
-    context.fillText(item.label || 'The Forever Club', 192, 421, 346);
-    context.font = '12px system-ui';
-    context.fillText(image ? 'T H E   F O R E V E R   C L U B' : 'A B S T R A C T   A R C H I V E   P L A T E', 192, 449);
-    texture.needsUpdate = true;
-  };
-  draw(null);
-  const photo = !item.isPlaceholder && (item.thumb || item.src);
-  if (photo) imageLoader.load(photo, image => {
-    draw(image);
-    invalidate();
-  }, undefined, () => {
-    document.querySelector('#archive-note').hidden = false;
-  });
-  faces.set(item.id, texture);
   return texture;
 }
 
-function descentCurve(lane) {
-  const points = [];
-  for (let i = 0; i <= 12; i++) {
-    const t = i / 12;
-    const weave = Math.sin(t * Math.PI * 2 + lane.phase) * lane.sway;
-    const z = lane.z + Math.sin(t * Math.PI * 2.7 + lane.phase) * lane.depth;
-    points.push(new THREE.Vector3(lane.x + weave + (t - .5) * .92, 10.7 - t * 21.4, z));
-  }
-  return new THREE.CatmullRomCurve3(points);
+function glowTexture() {
+  const image = document.createElement('canvas');
+  image.width = image.height = 64;
+  const context = image.getContext('2d');
+  const light = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+  light.addColorStop(0, '#fff');
+  light.addColorStop(.12, '#ffeed4');
+  light.addColorStop(.32, '#ffc99365');
+  light.addColorStop(1, '#ffc99300');
+  context.fillStyle = light;
+  context.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(image);
 }
 
-function makeRibbon(curve, width, phase, glow) {
-  const positions = [];
-  const uvs = [];
-  const indices = [];
-  const length = 144;
-  const across = new THREE.Vector3();
-  const towardsCamera = new THREE.Vector3(0, 0, 1);
-  for (let i = 0; i <= length; i++) {
-    const t = i / length;
-    const center = curve.getPoint(t);
-    const tangent = curve.getTangent(t);
-    across.crossVectors(tangent, towardsCamera).normalize().applyAxisAngle(tangent, Math.sin(t * 13 + phase) * .85);
-    const half = width * (.42 + .58 * Math.sin(t * Math.PI)) * (.8 + .2 * Math.cos(t * 16 + phase));
-    for (const side of [-1, 1]) {
-      const point = center.clone().addScaledVector(across, side * half);
-      positions.push(point.x, point.y, point.z);
-      uvs.push((side + 1) / 2, t);
-    }
-    const a = i * 2;
-    if (i < length) indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.setIndex(indices);
-  const material = new THREE.ShaderMaterial({
-    uniforms: { time: { value: 0 }, phase: { value: phase }, glow: { value: glow } },
-    vertexShader: ribbonVertex,
-    fragmentShader: ribbonFragment,
-    transparent: true,
-    depthWrite: false,
-    side: THREE.DoubleSide,
-    blending: THREE.AdditiveBlending
-  });
-  return new THREE.Mesh(geometry, material);
-}
-
-function makeDust() {
-  const random = randomFrom(1428);
-  const particles = 1050;
-  const positions = new Float32Array(particles * 3);
-  const seeds = new Float32Array(particles);
-  for (let i = 0; i < particles; i++) {
-    positions.set([(random() - .5) * 25, (random() - .5) * 24, random() * 21 - 13], i * 3);
-    seeds[i] = random();
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute('seed', new THREE.BufferAttribute(seeds, 1));
-  const material = new THREE.ShaderMaterial({
-    uniforms: { time: { value: 0 }, pixelRatio: { value: 1 } },
-    vertexShader: dustVertex,
-    fragmentShader: dustFragment,
-    transparent: true,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false
-  });
-  return new THREE.Points(geometry, material);
-}
-
-function boot(renderer, items) {
-  const scene = new THREE.Scene();
-  const cascade = new THREE.Group();
-  scene.add(cascade);
-  const camera = new THREE.PerspectiveCamera(45, 1, .1, 100);
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.11;
-
-  const composer = new EffectComposer(renderer);
-  composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), .65, .67, .80);
-  composer.addPass(bloom);
-  composer.addPass(new OutputPass());
-  composer.addPass(new FXAAPass());
-
-  const sky = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
-    uniforms: { offset: { value: new THREE.Vector2() }, aspect: { value: 1 }, time: { value: 0 } },
-    vertexShader: skyVertex, fragmentShader: skyFragment, depthTest: false, depthWrite: false
-  }));
-  sky.frustumCulled = false;
-  sky.renderOrder = -100;
-  scene.add(sky);
-  scene.add(new THREE.HemisphereLight('#ffefe2', '#7453a3', 1.65));
-  const key = new THREE.DirectionalLight('#fff3dc', 2.35);
-  key.position.set(-5, 8, 10);
-  scene.add(key);
-  const rim = new THREE.PointLight('#cd91ff', 59, 25);
-  rim.position.set(3, -1, -2);
-  scene.add(rim);
-  const champagne = new THREE.PointLight('#ffba78', 34, 18);
-  champagne.position.set(-3, -3, 4);
-  scene.add(champagne);
-
-  const lanes = [
-    { x: -.46, z: 1.1, phase: .94, sway: 1.35, depth: 1.6, scale: .98, count: 4, offset: .04, speed: .032 },
-    { x: .52, z: -1.4, phase: 3.35, sway: 1.74, depth: 2.0, scale: .79, count: 4, offset: .12, speed: .027 },
-    { x: -1.7, z: -5.0, phase: 4.1, sway: 1.82, depth: 1.65, scale: .76, count: 5, offset: .075, speed: .024 },
-    { x: 2.12, z: 3.15, phase: 1.5, sway: 1.77, depth: 1.4, scale: 1.18, count: 3, offset: .015, speed: .034 },
-    { x: -2.42, z: 2.0, phase: 3.6, sway: 1.5, depth: 2.2, scale: 1.12, count: 3, offset: .17, speed: .031 }
-  ];
-  const ribbons = [
-    { x: .23, z: 1.65, phase: 1.72, sway: 2.12, depth: 1.6, width: .35, glow: 1.05 },
-    { x: -.68, z: -.8, phase: 2.27, sway: 2.02, depth: 1.8, width: .22, glow: .99 },
-    { x: .84, z: -3.4, phase: 4, sway: 2.36, depth: 1.65, width: .28, glow: .8 },
-    { x: -1.28, z: 3.1, phase: 5.18, sway: 2.25, depth: .98, width: .15, glow: .75 },
-    { x: .52, z: -1.95, phase: 1.45, sway: 2.66, depth: 1.16, width: .07, glow: .9 }
-  ].map(({ width: band, phase, glow, ...lane }) => {
-    const ribbon = makeRibbon(descentCurve({ ...lane, phase }), band, phase, glow);
-    cascade.add(ribbon);
-    return ribbon;
-  });
-  const dust = makeDust();
-  cascade.add(dust);
-
-  const paper = roundedPaper();
-  const faceGeometry = new THREE.PlaneGeometry(width, height);
-  const paperBack = new THREE.MeshStandardMaterial({ color: '#ddbaa5', roughness: .76 });
-  const paperEdge = new THREE.MeshStandardMaterial({ color: '#ab7c73', roughness: .46, metalness: .2 });
-  let next = 0;
-  const cards = lanes.flatMap(lane => {
-    const curve = descentCurve(lane);
-    return Array.from({ length: lane.count }, (_, i) => {
-      const group = new THREE.Group();
-      const base = new THREE.Mesh(paper, [paperBack, paperEdge]);
-      const face = new THREE.Mesh(faceGeometry, new THREE.MeshStandardMaterial({
-        color: '#ffffff', roughness: .62, emissive: '#86596f', emissiveIntensity: .12
-      }));
-      face.position.z = depth + .02;
-      group.add(base, face);
-      group.scale.setScalar(lane.scale);
-      cascade.add(group);
-      return { group, face, lane, curve, start: i / lane.count + lane.offset, cycle: 0 };
-    });
-  });
-  const assign = card => {
-    const item = items[next++ % items.length];
-    card.face.material.map = faceFor(item, queueFrame);
-    card.face.material.emissiveMap = card.face.material.map;
-    card.face.userData.item = item;
-    card.face.material.needsUpdate = true;
-  };
-  cards.forEach(assign);
-
-  const pointer = new THREE.Vector2();
-  const aim = new THREE.Vector2();
-  const click = new THREE.Vector2();
-  const raycaster = new THREE.Raycaster();
-  const facesInScene = cards.map(card => card.face);
-  const position = new THREE.Vector3();
-  let drag;
-  let elapsed = 0;
-  let previous = 0;
-  let frame = 0;
-  let paused = reducedMotion.matches;
-  let stopped = false;
-
-  function queueFrame() {
-    if (!stopped && !frame) frame = requestAnimationFrame(render);
-  }
-  const updateMotion = () => {
-    motionButton.textContent = paused ? 'Resume flow' : 'Pause flow';
-    queueFrame();
-  };
-  const resize = () => {
-    const w = Math.max(1, canvas.clientWidth);
-    const h = Math.max(1, canvas.clientHeight);
-    // Bloom stays crisp without rendering four times as many pixels on high-DPI phones.
-    const pixelRatio = Math.min(devicePixelRatio || 1, w < 600 ? 1.35 : 1.5);
-    renderer.setPixelRatio(pixelRatio);
-    renderer.setSize(w, h, false);
-    composer.setPixelRatio(pixelRatio);
-    composer.setSize(w, h);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    sky.material.uniforms.aspect.value = camera.aspect;
-    dust.material.uniforms.pixelRatio.value = pixelRatio;
-    cascade.scale.x = Math.min(1, Math.max(.72, camera.aspect * 1.76));
-    queueFrame();
-  };
-
-  function render(timestamp) {
-    frame = 0;
-    if (stopped) return;
-    const delta = Math.min(.05, (timestamp - (previous || timestamp)) / 1000);
-    previous = timestamp;
-    if (!paused && !viewer.open) elapsed += delta;
-    pointer.lerp(aim, 1 - Math.exp(-delta * 5));
-    const desktop = THREE.MathUtils.smoothstep(camera.aspect, .80, 1.38);
-    const auto = paused ? 0 : Math.sin(elapsed * .28) * .27;
-    const framing = -2.6 * desktop;
-    camera.position.set(framing + pointer.x * .75 + auto, pointer.y * .42, 13.5);
-    camera.lookAt(framing, pointer.y * .17, 0);
-    sky.material.uniforms.offset.value.copy(pointer);
-    sky.material.uniforms.time.value = elapsed;
-    dust.material.uniforms.time.value = elapsed;
-    for (const ribbon of ribbons) ribbon.material.uniforms.time.value = elapsed;
-    for (const card of cards) {
-      const { lane, start, group, curve } = card;
-      const travel = start + elapsed * lane.speed;
-      const cycle = Math.floor(travel);
-      if (cycle !== card.cycle) {
-        if (card.cycle !== 0 || elapsed > 0) assign(card);
-        card.cycle = cycle;
+function drawRibbon(scene, curve, index) {
+  const uniforms = [];
+  for (const halo of [0, 1]) {
+    const position = [], uv = [], faces = [];
+    for (let i = 0; i <= 144; i++) {
+      const t = i / 144;
+      const p = curve.getPoint(t);
+      const tangent = curve.getTangent(t);
+      const across = new THREE.Vector3(0, 0, 1).cross(tangent).normalize();
+      across.applyAxisAngle(tangent, Math.sin(t * 15 + index) * 1.05);
+      const width = (.085 + .23 * Math.sin(Math.PI * t) ** 2) * (halo ? 3.8 : 1);
+      for (const direction of [-1, 1]) {
+        p.clone().addScaledVector(across, width * direction).toArray(position, position.length);
+        uv.push((direction + 1) / 2, t);
       }
-      const t = travel - cycle;
-      curve.getPoint(t, position);
-      group.position.copy(position);
-      const sway = elapsed * .52 + start * 11 + lane.phase;
-      const tilt = Math.sin(t * 7.6 + lane.phase);
-      group.rotation.set(.16 * Math.cos(sway) + tilt * .16,
-        .38 * Math.sin(sway * .72) + tilt * .23,
-        .22 * Math.cos(t * 7.5 + lane.phase) + .14 * Math.sin(sway));
+      const j = i * 2;
+      if (i) faces.push(j - 2, j - 1, j, j, j - 1, j + 1);
     }
-    composer.render();
-    if ((!paused && !viewer.open) || pointer.distanceToSquared(aim) > .00001) queueFrame();
-    else previous = 0;
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geometry.setIndex(faces);
+    const values = { time: { value: 0 }, phase: { value: index * 2.5 }, halo: { value: halo } };
+    uniforms.push(values);
+    scene.add(new THREE.Mesh(geometry, new THREE.ShaderMaterial({
+      vertexShader: ribbonVertex, fragmentShader: ribbonFragment, uniforms: values,
+      transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending
+    })));
+  }
+  return uniforms;
+}
+
+function setup(renderer, photos, videos) {
+  const items = photos.flatMap((photo, i) => i % 3 === 1 && videos.length
+    ? [photo, videos[Math.floor(i / 3) % videos.length]]
+    : [photo]);
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2('#634b78', .028);
+  const camera = new THREE.PerspectiveCamera(43, 1, .1, 90);
+  const loader = new THREE.TextureLoader();
+  const cache = new Map();
+  function texture(url) {
+    if (!cache.has(url)) {
+      const image = loader.load(url, undefined, undefined, () => {
+        const placeholder = texture(asset('plate-1.webp'));
+        if (placeholder !== image && placeholder.image) {
+          image.image = placeholder.image;
+          image.needsUpdate = true;
+        }
+      });
+      image.colorSpace = THREE.SRGBColorSpace;
+      image.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+      cache.set(url, image);
+    }
+    return cache.get(url);
   }
 
-  const track = event => {
-    const box = canvas.getBoundingClientRect();
-    aim.set((event.clientX - box.left) / box.width * 2 - 1, 1 - (event.clientY - box.top) / box.height * 2);
-    queueFrame();
+  const skyMap = texture(asset('cloud-canyon.webp'));
+  const sky = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({
+    map: skyMap, color: '#eee1f8', fog: false, depthWrite: false
+  }));
+  sky.position.z = -37;
+  sky.renderOrder = -10;
+  scene.add(sky);
+
+  scene.add(new THREE.HemisphereLight('#ffefff', '#7e507b', 2.0));
+  const sun = new THREE.DirectionalLight('#ffdfb1', 2.05);
+  sun.position.set(-3, 8, 5);
+  scene.add(sun);
+  const movingLight = new THREE.PointLight('#e2b6ff', 28, 18, 2);
+  scene.add(movingLight);
+
+  const pulse = glowTexture();
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: pulse, color: '#ffdbb9', opacity: .35, transparent: true, depthWrite: false,
+    blending: THREE.AdditiveBlending, fog: false
+  }));
+  halo.position.set(.4, 5.4, -18);
+  halo.scale.set(15, 15, 1);
+  scene.add(halo);
+
+  const streams = Array.from({ length: 5 }, (_, lane) => {
+    const shift = (lane - 2) * 1.25;
+    return new THREE.CatmullRomCurve3([
+      [shift * .38, 10.2, -19 - lane * .5],
+      [shift * .75 + Math.sin(lane) * 1.2, 5.8, -12 - lane * .7],
+      [shift + Math.sin(lane + .5) * 1.45, 2.3, -7.4 - lane * .7],
+      [shift * 1.06 - Math.cos(lane) * 1.16, -.3, -3.1 - lane * .78],
+      [shift * 1.22 + Math.sin(lane + 1) * 1.12, -2.9, 1.3 - lane * .8],
+      [shift * 1.5 - Math.sin(lane) * 1.1, -6.8, 6.4 - lane * .85]
+    ].map(coords => new THREE.Vector3(...coords)));
+  });
+  const ribbons = streams.flatMap((curve, i) => {
+    const points = curve.points.map((p, j) => p.clone().add(new THREE.Vector3(
+      Math.cos(j * 1.45 + i) * .77, Math.sin(j * 2 + i) * .23, Math.sin(j + i) * .69
+    )));
+    return drawRibbon(scene, new THREE.CatmullRomCurve3(points), i);
+  });
+
+  const paper = new THREE.MeshStandardMaterial({ map: paperTexture(), roughness: .86 });
+  const edge = new THREE.MeshStandardMaterial({ color: '#a69186', roughness: .98 });
+  const recess = new THREE.MeshStandardMaterial({ color: '#312330', roughness: 1 });
+  const frame = new THREE.BoxGeometry(1, 1, .063);
+  const plane = new THREE.PlaneGeometry(1, 1);
+  const cardCount = 34;
+  const hits = [];
+  const cards = Array.from({ length: cardCount }, (_, i) => {
+    const card = new THREE.Group();
+    const body = new THREE.Mesh(frame, [edge, edge, edge, edge, paper, paper]);
+    const lip = new THREE.Mesh(plane, recess);
+    lip.position.set(0, .057, .033);
+    card.add(body, lip);
+    const image = new THREE.Mesh(plane, new THREE.MeshStandardMaterial({ roughness: .83 }));
+    image.position.set(0, .057, .034);
+    card.add(image);
+    const label = document.createElement('canvas');
+    label.width = 128;
+    label.height = 32;
+    const ink = label.getContext('2d');
+    ink.fillStyle = '#675064';
+    ink.font = 'italic 18px Georgia';
+    ink.textAlign = 'center';
+    const labelTexture = new THREE.CanvasTexture(label);
+    labelTexture.colorSpace = THREE.SRGBColorSpace;
+    const mark = new THREE.Mesh(plane, new THREE.MeshBasicMaterial({
+      map: labelTexture, transparent: true, depthWrite: false
+    }));
+    mark.position.set(0, -.445, .035);
+    mark.scale.set(.65, .16, 1);
+    card.add(mark);
+    function updateItem(item) {
+      const aspect = clamp(Number(item.aspectRatio) || 1, .68, 1.42);
+      const width = Math.sqrt(aspect) * .83;
+      const height = .83 / Math.sqrt(aspect);
+      body.scale.set(width + .16, height + .27, 1);
+      lip.position.y = image.position.y = .058;
+      lip.scale.set(width + .018, height + .018, 1);
+      image.scale.set(width, height, 1);
+      image.material.map = texture(preview(item));
+      image.material.needsUpdate = true;
+      mark.position.y = -height * .5 - .04;
+      ink.clearRect(0, 0, 128, 32);
+      ink.fillText(item.type === 'video' ? 'Play reel' : String(item.index + 1).padStart(2, '0'), 64, 21);
+      labelTexture.needsUpdate = true;
+      body.userData.item = item;
+    }
+    updateItem(items[i % items.length]);
+    scene.add(card);
+    hits.push(body);
+    return { card, updateItem, itemIndex: i % items.length, previous: 0 };
+  });
+
+  const dustCount = 1150;
+  const seeds = new Float32Array(dustCount * 4);
+  const positions = new Float32Array(dustCount * 3);
+  for (let i = 0; i < dustCount; i++) {
+    for (let j = 0; j < 4; j++) seeds[i * 4 + j] = Math.random();
+  }
+  const dustGeometry = new THREE.BufferGeometry();
+  dustGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
+  const dust = new THREE.Points(dustGeometry, new THREE.PointsMaterial({
+    map: pulse, color: '#ffe0b2', size: .071, transparent: true, opacity: .83,
+    depthWrite: false, blending: THREE.AdditiveBlending, fog: false
+  }));
+  dust.frustumCulled = false;
+  scene.add(dust);
+
+  let paused = reduced.matches;
+  let automatic = false;
+  let time = 0;
+  let last;
+  let loop;
+  let drag;
+  let frameAverage = 16.7;
+  let resolution = 1;
+  const aim = new THREE.Vector2();
+  const offset = new THREE.Vector2();
+  const target = new THREE.Vector3();
+  const sample = new THREE.Vector3();
+  const ray = new THREE.Raycaster();
+
+  function resize() {
+    camera.aspect = canvas.clientWidth / Math.max(canvas.clientHeight, 1);
+    camera.updateProjectionMatrix();
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7, Math.sqrt(1100000 / (width * height))) * resolution);
+    renderer.setSize(width, height, false);
+    const skyHeight = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 52 * 1.10;
+    const skyWidth = Math.max(skyHeight * .68, skyHeight * camera.aspect);
+    sky.scale.set(skyWidth, Math.max(skyHeight, skyWidth / .68), 1);
+  }
+
+  function controls() {
+    motion.textContent = paused ? 'Resume flow' : 'Pause flow';
+    cinematic.setAttribute('aria-pressed', String(automatic));
+  }
+
+  function render(now) {
+    loop = requestAnimationFrame(render);
+    const elapsed = now - (last ?? now);
+    last = now;
+    const delta = Math.min(elapsed / 1000, .055);
+    if (!paused && !viewer.open && !document.hidden) {
+      time += delta;
+      frameAverage = mix(frameAverage, elapsed, .025);
+      if (time > 2 && frameAverage > 29 && resolution > .76) {
+        resolution -= .12;
+        frameAverage = 19;
+        resize();
+      }
+    }
+    if (automatic && !paused && !viewer.open) {
+      aim.set(Math.sin(time * .33) * 1.27, Math.cos(time * .23) * .53);
+    }
+    offset.lerp(aim, reduced.matches ? 1 : 1 - Math.exp(-delta * 6));
+    const portrait = camera.aspect < .8;
+    camera.position.set(offset.x * .55, .1 + offset.y * .4, portrait ? 12.9 : 12.1);
+    target.set(-offset.x * .46, .13 - offset.y * .51, -5);
+    camera.lookAt(target);
+    sky.position.x = offset.x * .31;
+    sky.position.y = offset.y * .22;
+    movingLight.position.set(Math.sin(time * .64) * 3, 2.2, 4);
+    ribbons.forEach(values => { values.time.value = time; });
+    cards.forEach(({ card, updateItem }, i) => {
+      const state = cards[i];
+      const lane = i % streams.length;
+      const t = (time * (.039 + lane * .0019) + i * .129 + lane * .048 + Math.sin(i * 2.54) * .026 + 1) % 1;
+      if (t < state.previous) {
+        state.itemIndex = (state.itemIndex + cardCount) % items.length;
+        updateItem(items[state.itemIndex]);
+      }
+      state.previous = t;
+      streams[lane].getPoint(t, card.position);
+      card.position.x += Math.sin(i * 2.3 + t * 8.3) * .36;
+      card.rotation.set(Math.sin(i * 1.3 + t * 8) * .24, Math.sin(i * 2.1 + t * 7) * .44,
+        Math.sin(i * 2.8 + t * 9) * .45);
+      const appear = Math.min(1, t * 24, (1 - t) * 28);
+      card.scale.setScalar((.72 + (i % 6) * .095) * appear);
+    });
+    for (let i = 0; i < dustCount; i++) {
+      const seed = i * 4;
+      const a = seeds[seed], b = seeds[seed + 1], c = seeds[seed + 2], d = seeds[seed + 3];
+      if (i < 540) {
+        const t = (a + time * (.035 + b * .045)) % 1;
+        streams[i % streams.length].getPoint(t, sample);
+        sample.x += (c - .5) * (1 + d * 2.8);
+        sample.y += (d - .5) * 1.75;
+        sample.z += (b - .5) * 2.2;
+      } else {
+        sample.set((a - .5) * 24, (b + time * -.009 + 1e4) % 1 * 23 - 11, -25 + c * 33);
+      }
+      sample.toArray(positions, i * 3);
+    }
+    dustGeometry.attributes.position.needsUpdate = true;
+    renderer.render(scene, camera);
+  }
+
+  motion.onclick = () => { paused = !paused; controls(); };
+  cinematic.onclick = () => {
+    automatic = !automatic;
+    if (automatic && !reduced.matches) paused = false;
+    if (!automatic) aim.set(0, 0);
+    controls();
   };
+  reduced.addEventListener('change', () => {
+    paused = reduced.matches;
+    automatic = false;
+    controls();
+  });
+
   canvas.addEventListener('pointerdown', event => {
-    if (!event.isPrimary || event.button !== 0 || stopped) return;
-    track(event);
-    drag = { x: event.clientX, y: event.clientY };
+    if (!event.isPrimary || event.button !== 0) return;
     canvas.setPointerCapture(event.pointerId);
+    drag = { x: event.clientX, y: event.clientY, start: aim.clone(), moved: false };
   });
   canvas.addEventListener('pointermove', event => {
-    if (event.isPrimary && (drag || event.pointerType === 'mouse')) track(event);
+    if (!drag || !event.isPrimary) return;
+    const x = event.clientX - drag.x;
+    const y = event.clientY - drag.y;
+    if (Math.hypot(x, y) < 7 && !drag.moved) return;
+    drag.moved = true;
+    automatic = false;
+    controls();
+    aim.set(clamp(drag.start.x + x * .013, -2, 2), clamp(drag.start.y - y * .011, -1.45, 1.45));
   });
   canvas.addEventListener('pointerup', event => {
     if (!drag || !event.isPrimary) return;
-    const distance = Math.hypot(event.clientX - drag.x, event.clientY - drag.y);
-    drag = null;
-    if (distance > 9 || viewer.open) return;
-    track(event);
-    click.copy(aim);
-    raycaster.setFromCamera(click, camera);
-    const hit = raycaster.intersectObjects(facesInScene, false)[0];
-    if (!hit) return;
-    const item = hit.object.userData.item;
-    const image = document.querySelector('#archive-image');
-    image.src = !item.isPlaceholder && item.src ? item.src : hit.object.material.map.image.toDataURL();
-    image.alt = item.isPlaceholder ? 'Abstract artwork standing in for an unavailable photograph' : item.label;
-    document.querySelector('#archive-caption').textContent = item.label;
-    viewer.showModal();
+    if (!drag.moved) {
+      ray.setFromCamera(new THREE.Vector2(event.clientX / canvas.clientWidth * 2 - 1,
+        1 - event.clientY / canvas.clientHeight * 2), camera);
+      const hit = ray.intersectObjects(hits, false)[0];
+      if (hit) openMemory(hit.object.userData.item);
+    }
+    drag = undefined;
   });
-  function centerPointer() {
-    drag = null;
-    aim.set(0, 0);
-    queueFrame();
-  }
-  canvas.addEventListener('pointercancel', centerPointer);
-  canvas.addEventListener('pointerleave', () => { if (!drag) centerPointer(); });
-  viewer.addEventListener('close', centerPointer);
-  document.querySelector('#close-archive').onclick = () => viewer.close();
-  motionButton.onclick = () => {
-    paused = !paused;
-    updateMotion();
-  };
-  reducedMotion.addEventListener('change', event => {
-    paused = event.matches;
-    centerPointer();
-    updateMotion();
-  });
+  canvas.addEventListener('lostpointercapture', () => { drag = undefined; });
   canvas.addEventListener('webglcontextlost', event => {
     event.preventDefault();
-    stopped = true;
-    cancelAnimationFrame(frame);
-    motionButton.disabled = true;
-    status.textContent = 'The WebGL context was lost. Reload to reopen the Waterfall.';
-    status.hidden = false;
+    cancelAnimationFrame(loop);
+    fallback([...photos.slice(0, 4), ...videos.slice(0, 2)], 'Graphics disconnected. Reload to restore the waterfall, or open a memory below.');
   });
-  window.addEventListener('resize', resize);
+  addEventListener('resize', resize);
   resize();
-  updateMotion();
-  motionButton.disabled = false;
+  controls();
+  document.querySelector('.controls').hidden = false;
   status.hidden = true;
   canvas.dataset.renderer = 'Three.js WebGL';
+  loop = requestAnimationFrame(render);
 }
 
 async function start() {
-  let renderer;
+  let manifest;
   try {
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: 'high-performance' });
+    const response = await fetch('./media.json');
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    manifest = await response.json();
+    if (!manifest.photos?.length) throw new Error('Empty photo manifest');
   } catch (error) {
+    fallback([], 'The memory archive could not load. Open this page through an HTTP server.');
     console.error(error);
-    status.textContent = 'WebGL 2 is unavailable in this browser. The Memory Waterfall needs hardware-accelerated graphics.';
     return;
   }
+  const videos = manifest.videos ?? [];
+  let renderer;
   try {
-    const embeddedManifest = document.querySelector('#archive-manifest');
-    let manifest;
-    if (embeddedManifest) {
-      manifest = JSON.parse(embeddedManifest.textContent);
-    } else {
-      const response = await fetch('./media.json');
-      if (!response.ok) throw new Error(`Media manifest HTTP ${response.status}`);
-      manifest = await response.json();
-    }
-    const { photos } = manifest;
-    if (!photos?.length) throw new Error('No archive plates in the manifest');
-    document.querySelector('#archive-note').hidden = !photos.some(item => item.isPlaceholder || !item.src);
-    boot(renderer, photos);
-  } catch (error) {
-    console.error(error);
-    status.textContent = 'The Memory Waterfall could not load. Open the preview from its HTTP server and reload.';
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  } catch {
+    fallback([...manifest.photos.slice(0, 4), ...videos.slice(0, 2)], 'WebGL 2 is unavailable. Open a memory below.');
+    return;
   }
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.04;
+  setup(renderer, manifest.photos, videos);
 }
 
 start();
