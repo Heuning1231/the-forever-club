@@ -1,48 +1,12 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#F8F3EB">
-  <title>The Forever Club — 2022–2026</title>
-  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
-  <link rel="stylesheet" href="./assets/css/styles.css">
-  <link rel="stylesheet" href="./assets/css/universe.css">
-</head>
-<body>
-  <canvas id="bg-stars" aria-hidden="true"></canvas>
-
-  <header id="top-bar" class="top-bar is-hidden">
-    <div class="top-bar-group">
-      <button type="button" class="chrome-pill" id="btn-home">Universe</button>
-      <span class="member-pill" id="nav-member-badge">Private Collection</span>
-    </div>
-    <details id="club-menu" class="club-menu">
-      <summary>Menu <span aria-hidden="true"></span></summary>
-      <div class="club-menu-panel">
-        <button type="button" class="chrome-pill" id="btn-sound" aria-pressed="false">Sound On</button>
-        <button type="button" class="chrome-pill" id="btn-motion" aria-pressed="false">Motion: Full</button>
-        <button type="button" class="chrome-pill" id="btn-switch-member">Switch Star</button>
-        <button type="button" class="chrome-pill" id="btn-replay-ticket">Ticket Desk</button>
-      </div>
-    </details>
-  </header>
-
-  <main id="app"></main>
-
-  <dialog id="media-modal" class="media-modal hidden" aria-label="Memory viewer">
-    <button type="button" class="modal-close-btn" id="modal-close" aria-label="Close viewer">Close</button>
-    <div class="modal-stage" id="modal-stage"></div>
-  </dialog>
-
-  <aside id="egg-toast" class="egg-toast hidden" role="status" aria-live="polite">
-    <span class="eyebrow" id="egg-label">Celestial Secret</span>
-    <h3 id="egg-title"></h3>
-    <p id="egg-body" class="muted"></p>
-    <button type="button" class="btn-gold-outline hidden" id="egg-download">Save Certificate PNG</button>
-    <button type="button" class="btn-gold-outline" id="egg-close">Acknowledge</button>
-  </aside>
-
-  <script type="module" src="./assets/js/app.js"></script>
-</body>
-</html>
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Forever Club</title><style>
+*{box-sizing:border-box}body{margin:0;background:#30223f;color:#fff4e4;font-family:Georgia,serif}canvas{position:fixed;inset:0;width:100%;height:100%;z-index:-1}main{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px 16px}h1{font-weight:400;font-style:italic;font-size:clamp(32px,8vw,62px);margin:12px 0;text-shadow:0 0 24px #d8b4ff}small{font:10px Arial;letter-spacing:.23em;color:#f4d8a6}p{line-height:1.8}button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}button:focus-visible{outline:2px solid #ffdc99}.stars{position:relative;width:min(90vw,420px);height:340px}.star{position:absolute;width:120px;transform:translate(-50%,-50%)}.star svg{width:78px;height:78px;filter:drop-shadow(0 0 17px #ffe0a0);animation:glow 3s infinite alternate}.star span{display:block;text-shadow:0 0 12px #fff}.star:disabled{opacity:.8;cursor:default}@keyframes glow{to{transform:scale(1.12);filter:drop-shadow(0 0 27px #ffe0a0)}}.menu{width:min(90vw,420px);display:grid;gap:20px;margin:30px 0}.portal{font-size:24px;padding:20px 5px;border-block:1px solid #d8bb8277;background:radial-gradient(ellipse,#d9b5ff33,transparent 75%)}.portal small{display:block;margin-top:8px}.action{border:1px solid #d8bb82;border-radius:30px;padding:12px 22px;margin:8px;background:#382849aa}.paper{background:linear-gradient(135deg,#fff8eb,#e6d5eb);color:#57415e;max-width:480px;width:100%;padding:30px 24px;border:1px solid #d8bb82;box-shadow:0 20px 60px #160b2877;text-align:left}.paper h2{font-weight:400;font-style:italic}.answer{display:block;width:100%;padding:14px;margin:8px 0;border:1px solid #a88bb7;color:#57415e}.memory{position:relative;width:min(90vw,500px);height:420px;overflow:hidden}.photo{position:absolute;width:43%;padding:8px 8px 22px;background:#fff5e6;color:#665071;box-shadow:0 15px 30px #160b3877;animation:float 5s ease-in-out infinite alternate}.photo:nth-of-type(1){left:5%;top:4%;transform:rotate(-12deg)}.photo:nth-of-type(2){right:5%;top:30%;transform:rotate(12deg);animation-delay:-2s}.photo:nth-of-type(3){left:12%;top:57%;transform:rotate(-7deg);animation-delay:-4s}.photo img,.placeholder{width:100%;aspect-ratio:1;object-fit:cover}.placeholder{display:grid;place-items:center;background:linear-gradient(145deg,#e0cee9,#a08ab9);font-style:italic}@keyframes float{to{translate:0 -13px}}dialog{max-width:92vw;background:#392a49;color:#fff4e4;border:1px solid #d8bb82}dialog img,dialog video{max-width:80vw;max-height:65vh}@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style><canvas id="sky"></canvas><main id="app"></main><dialog id="viewer"><div id="media"></div><button class="action" onclick="viewer.close()">Close</button></dialog><script>
+const app=document.querySelector('#app'),names=['KAHEAN','Líng Lëé','Jia Qi','yimin_04'];let who='',unlocked=false,q=0,page=0,items=Array.from({length:78},(_,i)=>({type:i<37?'photo':'video'}));const star='<svg viewBox="0 0 100 100"><path fill="#ffe2a5" d="M50 0Q58 40 100 50Q58 58 50 100Q42 58 0 50Q42 42 50 0Z"/><path fill="#fff9e8" d="M50 0L50 50 0 50Q42 42 50 0ZM50 50L100 50Q58 58 50 100Z"/></svg>';
+function title(t,s='THE FOREVER CLUB · 2022–2026'){return '<small>'+s+'</small><h1>'+t+'</h1>'}function back(){return '<button class="action" onclick="home()">Return to the stars</button>'}function stars(final=false){return '<div class="stars"><svg viewBox="0 0 400 340" style="position:absolute;inset:0;width:100%;height:100%"><path d="M200 54L64 160L200 285L336 160Z" stroke="#e7c58b" stroke-width="'+(final?2:.6)+'" fill="none"/></svg>'+names.map((n,i)=>'<button class="star" style="left:'+ [50,16,84,50][i]+'%;top:'+ [16,47,47,84][i]+'%" '+(final||i===0?'disabled':'onclick="choose('+i+')"')+'>'+star+'<span>'+n+'</span></button>').join('')+'</div>'}
+function start(){app.innerHTML=title('Four Girls. One Universe.')+stars()+'<p>Choose your star</p>'}function choose(i){who=names[i];unlocked=localStorage.getItem('fc-simple-'+who)==='yes';home()}function home(){app.innerHTML=title('A Universe of Us','WELCOME · '+who)+'<div class="menu"><button class="portal" onclick="memories()">Our Memories<small>EVERY LITTLE MOMENT</small></button><button class="portal" onclick="letter()">A Letter for You<small>ACROSS THE STARS</small></button><button class="portal" onclick="quiz(true)">Friendship Challenge<small>HOW WELL DO YOU KNOW US?</small></button>'+(unlocked?'<button class="portal" onclick="ending()">Est. Forever<small>A SECRET AMONG THE STARS</small></button>':'')+'</div><button class="action" onclick="start()">Choose another star</button>'}
+function memories(){app.innerHTML=title('Our Memories')+'<div class="memory"><svg viewBox="0 0 400 420" style="position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 0 8px #ffd58e)"><path d="M-30 0C450 100 -80 160 250 220S430 340 0 420" stroke="#e9c88d" stroke-width="3" fill="none"/></svg>'+Array.from({length:3},(_,j)=>{let i=(page+j)%items.length,m=items[i],src=m.thumb||m.poster||(m.type!=='video'?m.src:'');return '<button class="photo" onclick="view('+i+')">'+(src?'<img src="'+src+'" loading="lazy">':'<div class="placeholder">Memory '+(i+1)+'</div>')+(m.type==='video'?'Play video':'')+'</button>'}).join('')+'</div><button class="action" onclick="page=(page+3)%items.length;memories()">More memories</button>'+back()}
+function view(i){let m=items[i],d=document.querySelector('#media');d.replaceChildren();if(m.src){let el=document.createElement(m.type==='video'||/\.mp4$/i.test(m.src)?'video':'img');el.src=m.src;el.controls=true;d.append(el)}else d.textContent='Original media not yet available.';viewer.showModal()}viewer.onclose=()=>document.querySelector('#media').replaceChildren();
+function letter(){app.innerHTML=title('Across the Stars')+'<article class="paper"><h2>Dear '+who+',</h2><p>没想到四年就这样过去了。以后我们可能不会每天见面，也不会每天一起上课、赶 assignment、讲八卦。</p><p>但希望不管过了多少年，我们还是可以坐在同一张 Mamak 桌子，聊着那些只有我们才懂的事情。</p><p>希望你们以后都很有钱、很漂亮、很幸福。毕业只是结束了我们的学生身份，不是结束了我们的友情。</p><p>With love,<br>KAHEAN</p></article>'+back()}
+const questions=[['Which phrase appeared in our IG Notes?',['有被恶心到','毕业快乐','早安'],0],['What colour was the photo booth?',['Blue','Pink','Green'],1],['What was on the birthday glasses?',['Stars','Candles','Hearts'],1],['What were we doing in the street photo?',['Looking at phones','Running','Dancing'],0]];function quiz(reset){if(reset)q=0;if(q===questions.length){unlocked=true;localStorage.setItem('fc-simple-'+who,'yes');app.innerHTML=title('A secret awaits')+'<button onclick="ending()" style="width:140px">'+star+'</button><p>Touch the hidden star</p>'+back();return}let a=questions[q];app.innerHTML=title('Friendship Challenge')+'<div class="paper"><small style="color:#82678c">QUESTION '+(q+1)+' / 4</small><h2>'+a[0]+'</h2>'+a[1].map((x,i)=>'<button class="answer" onclick="answer('+i+')">'+x+'</button>').join('')+'<p id="feedback"></p></div>'+back()}function answer(i){let a=questions[q];document.querySelectorAll('.answer').forEach(b=>b.disabled=true);document.querySelector('#feedback').textContent=i===a[2]?'Correct!':'The answer is '+a[1][a[2]];let b=document.createElement('button');b.className='action';b.textContent='Continue';b.onclick=()=>{q++;quiz(false)};app.append(b)}function ending(){app.innerHTML=title('Est. Forever')+stars(true)+'<p>Of all the stars in the universe,<br>I’m glad our paths crossed.<br>Different dreams, different journeys,<br>but always under the same sky.</p><h2 style="font-weight:400">The Forever Club — Est. Forever.</h2>'+back()}
+fetch('./media.json').then(r=>r.json()).then(m=>{let a=Array.isArray(m)?m:m.items||[...(m.photos||[]),...(m.videos||[])];if(a.length)items=a}).catch(()=>{});start();const c=document.querySelector('#sky'),ctx=c.getContext('2d');let w,h,pts=[];function resize(){w=c.width=innerWidth;h=c.height=innerHeight;pts=Array.from({length:250},()=>[Math.random()*w,Math.random()*h,Math.random()*1.5+.2,Math.random()*6])}resize();addEventListener('resize',resize);function draw(t){ctx.fillStyle='#30213f';ctx.fillRect(0,0,w,h);for(let i=0;i<12;i++){let x=w*(.5+.48*Math.sin(i*2.4)),y=h*(.5+.48*Math.cos(i*1.8)),g=ctx.createRadialGradient(x,y,0,x,y,Math.max(w,h)*.45);g.addColorStop(0,i%3===0?'#dfbfe855':'#9d80c444');g.addColorStop(1,'#b69bda00');ctx.fillStyle=g;ctx.fillRect(0,0,w,h)}for(let [x,y,r,p] of pts){ctx.globalAlpha=.35+.6*(.5+.5*Math.sin(t*.0008+p));ctx.fillStyle='#ffe6bb';ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;if(!matchMedia('(prefers-reduced-motion: reduce)').matches)requestAnimationFrame(draw)}requestAnimationFrame(draw);
+</script></html>
