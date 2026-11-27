@@ -5,7 +5,7 @@
   "members": [
     {
       "id": "kahean",
-      "name": "Kahean",
+      "name": "KAHEAN",
       "cardCode": "FC–001",
       "constellation": "Lyra · Alpha Star",
       "starCoords": { "x": 22, "y": 54 },
@@ -36,137 +36,17 @@
       "sealMonogram": "Y"
     }
   ],
-  "worlds": [
-    { "id": "museum", "numeral": "I", "title": "Memory Museum", "subtitle": "A private exhibition of the days we keep.", "accent": "#CBB5D9", "pos": { "x": 23, "y": 19 } },
-    { "id": "archives", "numeral": "II", "title": "Chaos Archives", "subtitle": "The Forever Times · Confidential Edition", "accent": "#DCC49A", "pos": { "x": 77, "y": 19 } },
-    { "id": "cinema", "numeral": "III", "title": "Memory Cinema", "subtitle": "Select a royal stub to part the velvet curtains.", "accent": "#9FAFD8", "pos": { "x": 85, "y": 51 } },
-    { "id": "ballroom", "numeral": "IV", "title": "Royal Ballroom", "subtitle": "The celestial astrolabe holds four blessings.", "accent": "#DCC49A", "pos": { "x": 75, "y": 82 } },
-    { "id": "challenge", "numeral": "V", "title": "Friendship Challenge", "subtitle": "Draw a card and recall our shared timeline.", "accent": "#B79AD6", "pos": { "x": 25, "y": 82 } },
-    { "id": "letters", "numeral": "VI", "title": "Secret Letters", "subtitle": "Three wax-sealed letters kept in private archive.", "accent": "#D8AEB8", "pos": { "x": 15, "y": 51 } }
-  ],
-  "exhibits": [
-    { "id": "together", "label": "Together", "photoIndices": [34, 0, 7, 24, 32, 28, 2, 23] },
-    { "id": "moments", "label": "Little Moments", "photoIndices": [10, 3, 6, 21, 19, 36, 1, 9, 27, 29, 30, 31] },
-    { "id": "campus", "label": "Campus & Photo Booth", "photoIndices": [18, 12, 13, 14, 15, 25, 33, 35, 5, 11, 17, 16, 4] }
-  ],
-  "stories": [
-    {
-      "issue": "01",
-      "headline": "THE GROUP CHAT ENERGY",
-      "dek": "Four matching notes. One very specific mood.",
-      "photoIndex": 20,
-      "mappingConfirmed": true,
-      "note": "Preserved from original edition"
-    },
-    {
-      "issue": "02",
-      "headline": "PAPARAZZI EXCLUSIVE",
-      "dek": "Archive plate from the original Chaos Archives index.",
-      "photoIndex": 33,
-      "mappingConfirmed": false,
-      "note": "Pending real-media verification against original archive"
-    },
-    {
-      "issue": "03",
-      "headline": "BEAUTY ICONS",
-      "dek": "A photo booth editorial, naturally.",
-      "photoIndex": 18,
-      "mappingConfirmed": false,
-      "note": "Pending real-media verification against original archive"
-    },
-    {
-      "issue": "04",
-      "headline": "AFTER HOURS",
-      "dek": "Late-night archive edition.",
-      "photoIndex": 8,
-      "mappingConfirmed": false,
-      "note": "Pending real-media verification against original archive"
-    },
-    {
-      "issue": "05",
-      "headline": "BIRTHDAY SPECIAL",
-      "dek": "A wish worth keeping.",
-      "photoIndex": 3,
-      "mappingConfirmed": false,
-      "note": "Pending real-media verification against original archive"
-    }
-  ],
+  "ticketArtwork": "",
   "blessings": [
-    "Unlimited wealth",
-    "Eternal gorgeousness",
-    "A rich and kind partner",
-    "Lifetime mamak summits"
-  ],
-  "quiz": [
-    {
-      "id": "q1",
-      "question": "What did our matching IG Notes say?",
-      "options": ["今天好开心", "有被恶心到", "不想上课"],
-      "correctIndex": 1,
-      "photoIndex": 20,
-      "confirmed": true
-    },
-    {
-      "id": "q2",
-      "question": "What colour was the photo booth backdrop?",
-      "options": ["Pink", "Blue", "Green"],
-      "correctIndex": 0,
-      "photoIndex": 18,
-      "confirmed": false,
-      "verificationNote": "Legacy quiz mapping — verify against processed photo p18"
-    },
-    {
-      "id": "q3",
-      "question": "What was on the birthday glasses?",
-      "options": ["Stars", "Candles", "Flowers"],
-      "correctIndex": 1,
-      "photoIndex": 3,
-      "confirmed": false,
-      "verificationNote": "Legacy quiz mapping — verify against processed photo p03"
-    },
-    {
-      "id": "q4",
-      "question": "What were we doing in this street photo?",
-      "options": ["Looking at phones", "Dancing", "Eating"],
-      "correctIndex": 0,
-      "photoIndex": 10,
-      "confirmed": false,
-      "verificationNote": "Legacy quiz mapping — verify against processed photo p10"
-    }
-  ],
-  "secretLetters": [
-    {
-      "recipientIndex": 1,
-      "recipientName": "Líng Lëé",
-      "monogram": "L",
-      "photoIndex": 7,
-      "isDraft": true,
-      "draftLabel": "Draft blessing — customizable before final print",
-      "body": "My dearest Líng Lëé,\n\nMay you find happiness in the little things and brilliance in the big chapters ahead. From Diploma to Degree, thank you for filling our little universe with warmth, poise, and unforgettable laughter.\n\nNo matter how far our constellations travel, our table at mamak and our private club remain permanently reserved.\n\nWith endless affection,\nThe Forever Club"
-    },
-    {
-      "recipientIndex": 2,
-      "recipientName": "Jia Qi",
-      "monogram": "J",
-      "photoIndex": 24,
-      "isDraft": true,
-      "draftLabel": "Draft blessing — customizable before final print",
-      "body": "My dearest Jia Qi,\n\nMay your dreams grow bolder, your worries grow lighter, and every room you enter reflect the grace and spirit you bring to us. Thank you for every shared lecture, spontaneous detour, and quiet encouragement from 2022 to 2026.\n\nHere is to our next era — always glowing, always together in spirit.\n\nWith endless affection,\nThe Forever Club"
-    },
-    {
-      "recipientIndex": 3,
-      "recipientName": "yimin_04",
-      "monogram": "Y",
-      "photoIndex": 32,
-      "isDraft": true,
-      "draftLabel": "Draft blessing — customizable before final print",
-      "body": "My dearest yimin_04,\n\nMay life bring you gentle mornings, genuine people, unforgettable travels, and infinite reasons to smile. Thank you for being an irreplaceable star in this four-person cosmos.\n\nDifferent schedules and new cities will never dim what we built together.\n\nWith endless affection,\nThe Forever Club"
-    }
+    "Unlimited Wealth",
+    "Eternal Gorgeousness",
+    "A Rich and Kind Partner",
+    "Lifetime Mamak Summits"
   ],
   "timeCapsule": {
     "unlockDate": "2030-01-01T00:00:00+08:00",
     "isExampleDate": true,
-    "dateNote": "Example placeholder unlock date (2030-01-01). Update in config.json if another reunion date is preferred.",
+    "dateNote": "January 1, 2030 · provisional reunion date",
     "letterTitle": "To Kahean, Líng Lëé, Jia Qi & yimin_04 in 2030",
     "letterBody": "Four Girls. One Universe.\n\nIf you are reading this unlocked capsule, years have passed since 2026. Wherever your careers, cities, and lives have carried you, remember the nights we spent dreaming about the future and laughing until late.\n\nOpen the group chat today. Plan the next mamak summit. Nothing truly ends when four stars share the same sky.\n\nEst. Forever — The Forever Club"
   },

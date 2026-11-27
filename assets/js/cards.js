@@ -267,3 +267,35 @@ export function exportConstellationCardPNG(members, poemLines) {
 
   downloadCanvas(canvas, 'The-Forever-Club-Constellation.png');
 }
+
+export function exportRoyalPactPNG(members, promises, member) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1200;
+  canvas.height = 1000;
+  const ctx = canvas.getContext('2d');
+  const fill = ctx.createLinearGradient(0, 0, 1200, 1000);
+  fill.addColorStop(0, '#F8F3EB');
+  fill.addColorStop(1, '#E9DFF3');
+  ctx.fillStyle = fill;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  drawRoyalBorder(ctx, canvas.width, canvas.height);
+  ctx.fillStyle = '#51405D';
+  ctx.textAlign = 'center';
+  ctx.font = '64px Georgia, serif';
+  ctx.fillText('Our Forever Pact', 600, 165);
+  ctx.font = '31px Georgia, serif';
+  ctx.fillText(members.map(person => person.name).join('   ·   '), 600, 236);
+  ctx.font = '34px sans-serif';
+  promises.forEach((promise, index) => ctx.fillText(promise, 600, 345 + index * 65, 960));
+  ctx.fillStyle = '#874863';
+  ctx.beginPath();
+  ctx.arc(600, 755, 51, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#F8F3EB';
+  ctx.font = '50px Georgia, serif';
+  ctx.fillText(member.sealMonogram, 600, 771);
+  ctx.fillStyle = '#51405D';
+  ctx.font = '27px Georgia, serif';
+  ctx.fillText(`Personal seal · ${member.name}`, 600, 864);
+  downloadCanvas(canvas, 'the-forever-club-royal-pact.png');
+}

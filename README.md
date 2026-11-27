@@ -1,30 +1,41 @@
-# The Forever Club (2022–2026)
+# The Forever Club · A Universe of Us
 
-> **Four Girls. One Universe. Infinite Memories.**  
-> Members: Kahean (`FC–001`), Líng Lëé (`FC–002`), Jia Qi (`FC–003`), yimin_04 (`FC–004`).
+An interactive graduation keepsake for KAHEAN, Líng Lëé, Jia Qi, and yimin_04.
+The visitor journey starts at the royal ticket printer and opens into a
+single-screen map with four destinations.
 
-## Features Implemented
-- **Scene 00 — Royal Admission Printer**: 3D pearlescent & champagne-gold chassis, glass display, progressive ticket extrusion, swipe-up/click collect, Skip Intro, Web Audio SFX.
-- **Scene 01 — Royal Invitation**: 3D layered envelope with animated wax seal & long-press secret.
-- **Scene 02 & 03 — Identity Selection & Royal Membership Card**: Interactive pointer/touch-tilting holographic foil cards with PNG download.
-- **Scene 04 — Memory Orbit**: 3D Z-layered Polaroids with foreground/background champagne-gold splines, touch parallax, and 6 Celestial Worlds.
-- **Six Worlds**:
-  1. *Memory Museum* + *Infinity Gallery* (3D curved depth corridor)
-  2. *Chaos Archives* (*The Forever Times* vintage 3D page-turning magazine)
-  3. *Memory Cinema* (velvet curtains, ticket stubs, on-demand video)
-  4. *Royal Ballroom* (3D multi-ring Astrolabe Destiny Wheel with 4 non-repeating blessings + PNG export)
-  5. *Friendship Challenge* (3D flipping oracle cards, scoring, memory reveal)
-  6. *Secret Letters* (3 wax-sealed envelopes, typewriter reveal)
-- **Additional Celestial Artifacts**: *The Memory Crystal* (interactive 3D faceted amethyst polyhedron), *The Time Capsule* (2030-01-01 example countdown + preview unlock), *Cinematic Memory Mode* (Ken Burns), 4 *Hidden Easter Eggs*, and *Final Constellation* with PNG keepsake export.
+- **Our Memories** is the 3D Memory Waterfall. Open any photo or video in the
+  fullscreen viewer, and start or pause cinematic playback in that same viewer.
+- **Royal Destiny** is the interactive fortune instrument.
+- **Across the Stars** is the personalized graduation letter. Turn to its final
+  page to read, seal, or download the Forever Pact.
+- **Est. Forever** is the four-star constellation and graduation message.
 
-## GitHub Pages Deployment
-All paths are relative (`./`) and `.nojekyll` is included. Push the contents of `the-forever-club/` directly to a GitHub repository and enable GitHub Pages.
+Every destination is available as soon as the map opens. The selected identity,
+discovered secrets, and personal pact seals stay on the current device.
 
-## Local Preview
-```bash
-npx serve ./the-forever-club
-```
-Or with Python:
-```bash
-python -m http.server 8000 --directory ./the-forever-club
-```
+## Local preview
+
+From the checkout, run `python3 -m http.server 8080` and open the site on
+port 8080. The site uses native JavaScript modules and relative URLs. It has
+no build step, dependencies, account system, or paid services.
+The production address is https://the-forever-club.pages.dev/.
+
+## Content files
+
+- `config.json` holds the four members, blessings, finale text, and ticket artwork setting.
+- `letters.json` holds Kahean's provisional shared letter and a separate empty
+  paragraph field for each of the three recipients.
+- `config.json` → `ticketArtwork` accepts a local image path for the original
+  graduation ticket. Leave it empty to display the labelled temporary artwork.
+  The image is displayed at its original aspect ratio.
+- `media.json` retains the original manifest schema and interleaves photos and
+  videos in Memory Waterfall without assigning categories. Add original files
+  under a static path, set their `src` and optional `thumb` or `poster` paths,
+  and clear `isPlaceholder`. Keep each deployed file below 24 MiB.
+
+The original graduation ticket artwork was unavailable. Every photo slot
+`fc-p00`–`fc-p36` has an empty `src` and `thumb`, and every video slot
+`fc-v00`–`fc-v40` has an empty `src` and `poster`. Original filenames are
+unknown. The site displays labelled placeholder plates and simulated reels for
+these slots.
